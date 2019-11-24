@@ -15,12 +15,18 @@ public class RecursiveDescentParser {
         if (iterator.hasNext()) {
             symbol = iterator.next();
         }
-        symbol = null;
+        else {
+            symbol = "end";
+        }
+
     }
 
     private void verify(String symbol, String with) {
         if(symbol.equals(with)) {
             getNextSymbol();
+        }
+        else {
+            System.out.println("error");
         }
     }
 
@@ -31,10 +37,9 @@ public class RecursiveDescentParser {
     }
 
     private void globPromenne() {
-        while(!symbol.equals("procedura") && !symbol.equals("funkce")) {
-            if(symbol.equals("konst")) {
-                getNextSymbol();
-            }
+        if(!symbol.equals("procedura") && !symbol.equals("funkce")) {
+            modifikator();
+            verify(symbol, "typ");
             verify(symbol, "ident");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
@@ -47,13 +52,20 @@ public class RecursiveDescentParser {
                 // TODO: error
             }
             verify(symbol, ";");
+            globPromenne();
+        }
+    }
+
+    private void modifikator() {
+        if(symbol.equals("konst")) {
+            verify(symbol, "konst");
         }
     }
 
     private void funkceProcedury() {
-        while(symbol.equals("funkce")) {
+        if(symbol.equals("funkce")) {
             getNextSymbol();
-            verify(symbol, "navratova hodnota");
+            verify(symbol, "typ");
             verify(symbol, "ident");
             verify(symbol, "(");
             parametry();
@@ -61,6 +73,18 @@ public class RecursiveDescentParser {
             verify(symbol, "{");
             vnitrekFunkce();
             verify(symbol, "}");
+            funkceProcedury();
+        }
+        else if(symbol.equals("procedura")) {
+            getNextSymbol();
+            verify(symbol, "ident");
+            verify(symbol, "(");
+            parametry();
+            verify(symbol, ")");
+            verify(symbol, "{");
+            vnitrekProcedury();
+            verify(symbol, "}");
+            funkceProcedury();
         }
     }
 
@@ -69,6 +93,66 @@ public class RecursiveDescentParser {
     }
 
     private void vnitrekFunkce() {
+
+    }
+
+    private void vnitrekProcedury() {
+
+    }
+
+    private void viceAkci() {
+
+    }
+
+    private void rozhodnuti() {
+
+    }
+
+    private void cyklus() {
+
+    }
+
+    private void vyraz() {
+
+    }
+
+    private void podminka() {
+
+    }
+
+    private void slozitaPodminka() {
+
+    }
+
+    private void volaniFunkce() {
+
+    }
+
+    private void vstupHodnoty() {
+
+    }
+
+    private void vracHodnoty() {
+
+    }
+
+    private void zastaveni() {
+
+    }
+
+    private void prepinani() {
+
+    }
+
+    private void vicePripadu() {
+
+    }
+
+    private void typ() {
+
+    }
+
+    private void pole() {
 
     }
 }
