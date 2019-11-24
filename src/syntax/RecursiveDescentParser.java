@@ -44,7 +44,7 @@ public class RecursiveDescentParser {
                 verify(symbol, "volani funkce");
             }
             else {
-                //error
+                // TODO: error
             }
             verify(symbol, ";");
         }
