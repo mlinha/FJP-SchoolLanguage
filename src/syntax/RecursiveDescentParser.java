@@ -40,7 +40,7 @@ public class RecursiveDescentParser {
         if(!symbol.equals("procedura") && !symbol.equals("funkce")) {
             modifikator();
             verify(symbol, "typ");
-            verify(symbol, "ident");
+            verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
                 verify(symbol, "hodnota");
@@ -59,7 +59,7 @@ public class RecursiveDescentParser {
     private void lokPromenne() {
         if(!symbol.equals("akce")) { // TODO: action names
             verify(symbol, "typ");
-            verify(symbol, "ident");
+            verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
                 verify(symbol, "hodnota");
@@ -85,7 +85,7 @@ public class RecursiveDescentParser {
         if(symbol.equals("funkce")) {
             verify(symbol, "funkce");
             verify(symbol, "typ");
-            verify(symbol, "ident");
+            verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "(");
             parametry();
             verify(symbol, ")");
@@ -96,7 +96,7 @@ public class RecursiveDescentParser {
         }
         else if(symbol.equals("procedura")) {
             verify(symbol, "procedura");
-            verify(symbol, "ident");
+            verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "(");
             parametry();
             verify(symbol, ")");
@@ -109,7 +109,7 @@ public class RecursiveDescentParser {
 
     private void parametry() {
         verify(symbol, "typ");
-        verify(symbol, "ident");
+        verify(symbol, "IDENTIFIKATOR");
         if(symbol.equals(",")) {
             verify(symbol, ",");
             parametry();
@@ -129,16 +129,14 @@ public class RecursiveDescentParser {
 
     private void viceAkci() {
         if(symbol.equals("pokud")) {
-            verify(symbol, "pokud");
             rozhodnuti();
         }
         else if(symbol.equals("IDENTIFIKATOR")) {
             verify(symbol, "IDENTIFIKATOR");
-
+            // TODO vyraz, volani
         }
         else if(symbol.equals("prepinac")) {
-            verify(symbol, "prepinac");
-
+            prepinani();
         }
         else {
             cyklus();
@@ -147,6 +145,7 @@ public class RecursiveDescentParser {
     }
 
     private void rozhodnuti() {
+        verify(symbol, "pokud");
         verify(symbol, "(");
         slozitaPodminka();
         verify(symbol, ")");
@@ -224,23 +223,106 @@ public class RecursiveDescentParser {
     }
 
     private void podminka() {
-
+        verify(symbol, "IDENTIFIKATOR");
+        operator();
+        verify(symbol, "IDENTIFIKATOR");
     }
 
     private void slozitaPodminka() {
+        if(symbol.equals("!")) {
+            negace();
+            verify(symbol, "(");
+            slozitaPodminka();
+            verify(symbol, ")");
+            if(symbol.equals("||")) {
+                verify(symbol, "||");
+            }
+            else if(symbol.equals("&&")) {
+                verify(symbol, "&&");
+            }
+            else {
+                // TODO error
+                return;
+            }
+            if(symbol.equals("!")) {
+                negace();
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+            }
+            else {
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+            }
+        }
+        else {
+            if(symbol.equals("IDENTIFIKATOR")) {
+                podminka();
+            }
+            else {
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+                if(symbol.equals("||")) {
+                    verify(symbol, "||");
+                }
+                else if(symbol.equals("&&")) {
+                    verify(symbol, "&&");
+                }
+                else {
+                    // TODO error
+                    return;
+                }
+                if(symbol.equals("!")) {
+                    negace();
+                    verify(symbol, "(");
+                    slozitaPodminka();
+                    verify(symbol, ")");
+                }
+                else {
+                    verify(symbol, "(");
+                    slozitaPodminka();
+                    verify(symbol, ")");
+                }
+            }
+        }
+
 
     }
 
     private void volaniFunkce() {
-
+        verify(symbol, "IDENTIFIKATOR");
+        verify(symbol, "(");
+        if(!symbol.equals(")")) {
+            vstupHodnoty();
+        }
+        verify(symbol, ")");
+        verify(symbol, ";");
     }
 
     private void vstupHodnoty() {
-
+        if(symbol.equals("IDENTIFIKATOR")) {
+            verify(symbol, "IDENTIFIKATOR");
+        }
+        else {
+            verify(symbol, "hodnota");
+        }
+        if(symbol.equals(",")) {
+            verify(symbol, ",");
+            vstupHodnoty();
+        }
     }
 
     private void vracHodnoty() {
-
+        verify(symbol, "vrat");
+        if(symbol.equals("IDENTIFIKATOR")) {
+            verify(symbol, "IDENTIFIKATOR");
+        }
+        else if(symbol.equals("hodnota")) {
+            verify(symbol, "hodnota");
+        }
+        verify(symbol, ";");
     }
 
     private void zastaveni() {
@@ -248,11 +330,24 @@ public class RecursiveDescentParser {
     }
 
     private void prepinani() {
-
+        verify(symbol, "prepinac");
+        verify(symbol, "(");
+        vyraz();
+        verify(symbol, ")");
+        verify(symbol, "{");
+        vicePripadu();
+        verify(symbol, "}");
     }
 
     private void vicePripadu() {
-
+        verify(symbol, "pripad");
+        vyraz();
+        verify(symbol, ":");
+        viceAkci();
+        zastaveni();
+        if(symbol.equals("pripad")) {
+            vicePripadu();
+        }
     }
 
     private void typ() {
@@ -261,5 +356,13 @@ public class RecursiveDescentParser {
 
     private void pole() {
 
+    }
+
+    private void operator() {
+
+    }
+
+    private void negace() {
+        verify(symbol, "!");
     }
 }
