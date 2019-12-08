@@ -13,6 +13,6 @@ public class LexicalAnalyzer implements Analyzer {
     @Override
     public boolean analyze() {
 
-        return true;
+        return false;
     }
 }
