@@ -1,4 +1,4 @@
-package syntax;
+package analyzer.syntax;
 
 import java.util.Iterator;
 import java.util.List;
@@ -6,6 +6,8 @@ import java.util.List;
 public class RecursiveDescentParser {
     private Iterator<String> iterator;
     private String symbol;
+
+    private boolean isError = false;
 
     public  RecursiveDescentParser(List<String> data) {
         iterator = data.iterator();
@@ -26,20 +28,23 @@ public class RecursiveDescentParser {
             getNextSymbol();
         }
         else {
-            System.out.println("error");
+            System.out.println("Error: expected + \"" + with + "\", was \"" + symbol);
+            isError = true;
         }
     }
 
-    public void program() {
+    public boolean program() {
         getNextSymbol();
         globPromenne();
         funkceProcedury();
+
+        return isError;
     }
 
     private void globPromenne() {
         if(!symbol.equals("procedura") && !symbol.equals("funkce")) {
             modifikator();
-            verify(symbol, "typ");
+            typ();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
@@ -49,7 +54,8 @@ public class RecursiveDescentParser {
                 verify(symbol, "volani funkce");
             }
             else {
-                // TODO: error
+                System.out.println("Error: global variable definition not correct (" + symbol + ")");
+                isError = true;
             }
             verify(symbol, ";");
             globPromenne();
@@ -58,7 +64,7 @@ public class RecursiveDescentParser {
 
     private void lokPromenne() {
         if(!symbol.equals("akce")) { // TODO: action names
-            verify(symbol, "typ");
+            typ();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
@@ -69,6 +75,8 @@ public class RecursiveDescentParser {
             }
             else {
                 // TODO: error
+                System.out.println("Error: local variable definition not correct (" + symbol + ")");
+                isError = true;
             }
             verify(symbol, ";");
             lokPromenne();
@@ -84,7 +92,7 @@ public class RecursiveDescentParser {
     private void funkceProcedury() {
         if(symbol.equals("funkce")) {
             verify(symbol, "funkce");
-            verify(symbol, "typ");
+            typ();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "(");
             parametry();
@@ -108,7 +116,7 @@ public class RecursiveDescentParser {
     }
 
     private void parametry() {
-        verify(symbol, "typ");
+        typ();
         verify(symbol, "IDENTIFIKATOR");
         if(symbol.equals(",")) {
             verify(symbol, ",");
@@ -128,20 +136,29 @@ public class RecursiveDescentParser {
     }
 
     private void viceAkci() {
-        if(symbol.equals("pokud")) {
-            rozhodnuti();
+        switch (symbol) {
+            case "pokud":
+                rozhodnuti();
+                viceAkci();
+                break;
+            case "IDENTIFIKATOR":
+                verify(symbol, "IDENTIFIKATOR");
+                viceAkci();
+                // TODO vyraz, volani
+                break;
+            case "prepinac":
+                prepinani();
+                viceAkci();
+                break;
+            case "zatimco":
+            case "delej":
+            case "pro":
+            case "prokazdy":
+            case "opakuj":
+                cyklus();
+                viceAkci();
+                break;
         }
-        else if(symbol.equals("IDENTIFIKATOR")) {
-            verify(symbol, "IDENTIFIKATOR");
-            // TODO vyraz, volani
-        }
-        else if(symbol.equals("prepinac")) {
-            prepinani();
-        }
-        else {
-            cyklus();
-        }
-        viceAkci();
     }
 
     private void rozhodnuti() {
@@ -161,60 +178,62 @@ public class RecursiveDescentParser {
     }
 
     private void cyklus() {
-        if(symbol.equals("zatimco")) {
-            verify(symbol, "zatimco");
-            verify(symbol, "(");
-            slozitaPodminka();
-            verify(symbol, ")");
-            verify(symbol, "{");
-            viceAkci();
-            verify(symbol, "}");
-        }
-        else if(symbol.equals("delej")) {
-            verify(symbol, "delej");
-            verify(symbol, "{");
-            viceAkci();
-            verify(symbol, "}");
-            verify(symbol, "zatimco");
-            verify(symbol, "(");
-            slozitaPodminka();
-            verify(symbol, ")");
-            verify(symbol, ";");
+        switch (symbol) {
+            case "zatimco":
+                verify(symbol, "zatimco");
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+                verify(symbol, "{");
+                viceAkci();
+                verify(symbol, "}");
+                break;
+            case "delej":
+                verify(symbol, "delej");
+                verify(symbol, "{");
+                viceAkci();
+                verify(symbol, "}");
+                verify(symbol, "zatimco");
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+                verify(symbol, ";");
 
-        }
-        else if(symbol.equals("pro")) {
-            verify(symbol, "pro");
-            verify(symbol, "(");
-            vyraz();
-            verify(symbol, ";");
-            podminka();
-            verify(symbol, ";");
-            vyraz();
-            verify(symbol, ")");
-            verify(symbol, "{");
-            viceAkci();
-            verify(symbol, "}");
-        }
-        else if(symbol.equals("prokazdy")) {
-            verify(symbol, "prokazdy");
-            verify(symbol, "(");
-            verify(symbol, "pole");
-            verify(symbol, ")");
-            verify(symbol, "{");
-            viceAkci();
-            verify(symbol, "}");
+                break;
+            case "pro":
+                verify(symbol, "pro");
+                verify(symbol, "(");
+                vyraz();
+                verify(symbol, ";");
+                podminka();
+                verify(symbol, ";");
+                vyraz();
+                verify(symbol, ")");
+                verify(symbol, "{");
+                viceAkci();
+                verify(symbol, "}");
+                break;
+            case "prokazdy":
+                verify(symbol, "prokazdy");
+                verify(symbol, "(");
+                verify(symbol, "pole");
+                verify(symbol, ")");
+                verify(symbol, "{");
+                viceAkci();
+                verify(symbol, "}");
 
-        }
-        else if(symbol.equals("opakuj")) {
-            verify(symbol, "opakuj");
-            verify(symbol, "{");
-            viceAkci();
-            verify(symbol, "}");
-            verify(symbol, "dokud");
-            verify(symbol, "(");
-            slozitaPodminka();
-            verify(symbol, ")");
-            verify(symbol, ";");
+                break;
+            case "opakuj":
+                verify(symbol, "opakuj");
+                verify(symbol, "{");
+                viceAkci();
+                verify(symbol, "}");
+                verify(symbol, "dokud");
+                verify(symbol, "(");
+                slozitaPodminka();
+                verify(symbol, ")");
+                verify(symbol, ";");
+                break;
         }
     }
 
@@ -224,7 +243,7 @@ public class RecursiveDescentParser {
 
     private void podminka() {
         verify(symbol, "IDENTIFIKATOR");
-        operator();
+        podmOperator();
         verify(symbol, "IDENTIFIKATOR");
     }
 
@@ -241,7 +260,6 @@ public class RecursiveDescentParser {
                 verify(symbol, "&&");
             }
             else {
-                // TODO error
                 return;
             }
             if(symbol.equals("!")) {
@@ -271,7 +289,6 @@ public class RecursiveDescentParser {
                     verify(symbol, "&&");
                 }
                 else {
-                    // TODO error
                     return;
                 }
                 if(symbol.equals("!")) {
@@ -287,8 +304,6 @@ public class RecursiveDescentParser {
                 }
             }
         }
-
-
     }
 
     private void volaniFunkce() {
@@ -326,7 +341,8 @@ public class RecursiveDescentParser {
     }
 
     private void zastaveni() {
-
+        verify(symbol, "zastav");
+        verify(symbol, ";");
     }
 
     private void prepinani() {
@@ -351,7 +367,20 @@ public class RecursiveDescentParser {
     }
 
     private void typ() {
-
+        switch (symbol) {
+            case "cislo":
+                verify(symbol, "cislo");
+                break;
+            case "hodnota":
+                verify(symbol, "hodnota");
+                break;
+            case "text":
+                verify(symbol, "text");
+                break;
+            case "znak":
+                verify(symbol, "znak");
+                break;
+        }
     }
 
     private void pole() {
@@ -360,6 +389,29 @@ public class RecursiveDescentParser {
 
     private void operator() {
 
+    }
+
+    private void podmOperator() {
+        switch (symbol) {
+            case ">":
+                verify(symbol, ">");
+                break;
+            case "<":
+                verify(symbol, "<");
+                break;
+            case "<=":
+                verify(symbol, "<=");
+                break;
+            case ">=":
+                verify(symbol, ">=");
+                break;
+            case "==":
+                verify(symbol, "==");
+                break;
+            case "!=":
+                verify(symbol, "!=");
+                break;
+        }
     }
 
     private void negace() {

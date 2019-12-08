@@ -1,13 +1,15 @@
 package app;
 
-import syntax.RecursiveDescentParser;
+import analyzer.Analyzer;
+import analyzer.syntax.RecursiveDescentParser;
+import analyzer.syntax.SyntaxAnalyzer;
 
 import java.util.LinkedList;
 
 public class Main {
 
     public static void main(String[] args) {
-
+        boolean isError;
         LinkedList<String> a = new LinkedList<>();
         a.add("konst");
         a.add("typ");
@@ -16,7 +18,10 @@ public class Main {
         a.add("hodnota");
         a.add(";");
         a.add("funkce");
-        RecursiveDescentParser i = new RecursiveDescentParser(a);
-        i.program();
+        Analyzer analyzer = new SyntaxAnalyzer(a);
+        isError = analyzer.analyze();
+        if(isError) {
+
+        }
     }
 }
