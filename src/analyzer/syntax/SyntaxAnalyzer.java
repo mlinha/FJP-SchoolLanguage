@@ -2,7 +2,6 @@ package analyzer.syntax;
 
 import analyzer.Analyzer;
 
-import java.util.LinkedList;
 import java.util.List;
 
 public class SyntaxAnalyzer implements Analyzer {

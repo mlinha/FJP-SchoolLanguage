@@ -9,13 +9,14 @@ import java.util.LinkedList;
 public class Main {
 
     public static void main(String[] args) {
+        // test
         boolean isError;
         LinkedList<String> a = new LinkedList<>();
         a.add("konst");
-        a.add("typ");
-        a.add("ident");
+        a.add("cislo");
+        a.add("IDENTIFIKATOR");
         a.add("=");
-        a.add("hodnota");
+        a.add("=");
         a.add(";");
         a.add("funkce");
         Analyzer analyzer = new SyntaxAnalyzer(a);
@@ -23,5 +24,6 @@ public class Main {
         if(isError) {
 
         }
+        // end of test
     }
 }
