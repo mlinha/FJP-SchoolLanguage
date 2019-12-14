@@ -1,21 +1,23 @@
 package analyzer.syntax;
 
+import analyzer.Token;
+
 import java.util.Iterator;
 import java.util.List;
 
 public class RecursiveDescentParser {
-    private Iterator<String> iterator;
+    private Iterator<Token> iterator;
     private String symbol;
 
     private boolean isError = false;
 
-    protected RecursiveDescentParser(List<String> data) {
-        iterator = data.iterator();
+    protected RecursiveDescentParser(List<Token> tokens) {
+        iterator = tokens.iterator();
     }
 
     private void getNextSymbol() {
         if(iterator.hasNext()) {
-            symbol = iterator.next();
+            symbol = iterator.next().getName();
         }
         else {
             symbol = "end";
@@ -29,7 +31,7 @@ public class RecursiveDescentParser {
         }
         else {
             if(!symbol.equals("end")) {
-                System.out.println("Error: expected + \"" + with + "\", was \"" + symbol + "\"");
+                System.out.println("Error: expected \"" + with + "\", was \"" + symbol + "\"");
             }
             getNextSymbol();
             isError = true;
@@ -571,8 +573,8 @@ public class RecursiveDescentParser {
             case "cislo":
                 verify(symbol, "cislo");
                 break;
-            case "hodnota":
-                verify(symbol, "hodnota");
+            case "logicky":
+                verify(symbol, "logicky");
                 break;
             case "text":
                 verify(symbol, "text");

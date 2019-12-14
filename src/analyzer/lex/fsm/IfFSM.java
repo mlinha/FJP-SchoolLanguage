@@ -1,17 +1,6 @@
-package analyzer.lex;
+package analyzer.lex.fsm;
 
-public class WhileFSM implements FiniteStateMachine {
-
-    private int currentState;
-    private boolean isError;
-    private boolean isFinnished;
-
-    @Override
-    public void start() {
-        currentState = 0;
-        isFinnished = false;
-        isError = false;
-    }
+public class IfFSM extends FiniteStateMachine {
 
     @Override
     public boolean nextState(char input) {
@@ -31,28 +20,12 @@ public class WhileFSM implements FiniteStateMachine {
             case 4:
                 state4(input);
                 break;
-            case 5:
-                state5(input);
-                break;
-            case 6:
-                state6(input);
-                break;
         }
-        return !(isError || isFinnished);
-    }
-
-    @Override
-    public boolean isError() {
-        return isError;
-    }
-
-    @Override
-    public boolean isFinished() {
-        return isFinnished;
+        return !(isError || isFinished);
     }
 
     private void state0(char input) {
-        if(input == 'z') {
+        if(input == 'p') {
             currentState = 1;
         }
         else {
@@ -61,7 +34,7 @@ public class WhileFSM implements FiniteStateMachine {
     }
 
     private void state1(char input) {
-        if(input == 'a') {
+        if(input == 'o') {
             currentState = 2;
         }
         else {
@@ -70,7 +43,7 @@ public class WhileFSM implements FiniteStateMachine {
     }
 
     private void state2(char input) {
-        if(input == 't') {
+        if(input == 'k') {
             currentState = 3;
         }
         else {
@@ -79,7 +52,7 @@ public class WhileFSM implements FiniteStateMachine {
     }
 
     private void state3(char input) {
-        if(input == 'i') {
+        if(input == 'u') {
             currentState = 4;
         }
         else {
@@ -88,27 +61,9 @@ public class WhileFSM implements FiniteStateMachine {
     }
 
     private void state4(char input) {
-        if(input == 'm') {
+        if(input == 'd') {
             currentState = 5;
-        }
-        else {
-            isError = true;
-        }
-    }
-
-    private void state5(char input) {
-        if(input == 'c') {
-            currentState = 6;
-        }
-        else {
-            isError = true;
-        }
-    }
-
-    private void state6(char input) {
-        if(input == 'o') {
-            currentState = 7;
-            isFinnished = true;
+            isFinished = true;
         }
         else {
             isError = true;

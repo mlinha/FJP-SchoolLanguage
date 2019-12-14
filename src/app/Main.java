@@ -1,6 +1,7 @@
 package app;
 
 import analyzer.Analyzer;
+import analyzer.Token;
 import analyzer.lex.LexicalAnalyzer;
 import analyzer.syntax.RecursiveDescentParser;
 import analyzer.syntax.SyntaxAnalyzer;
@@ -30,8 +31,9 @@ public class Main {
         else {
             return;
         }
+        List<Token> tokens = ((LexicalAnalyzer) analyzer).getTokens();
         System.out.println();
-        analyzer = new SyntaxAnalyzer(a);
+        analyzer = new SyntaxAnalyzer(tokens);
         System.out.println("---------Running syntax analyzer---------");
         isError = analyzer.analyze();
         if(!isError) {

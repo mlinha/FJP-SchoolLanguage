@@ -1,20 +1,24 @@
 package analyzer.lex;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import analyzer.Token;
+import analyzer.lex.fsm.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Lexer {
 
+    private List<Token> tokens = new ArrayList<>();
     private List<FiniteStateMachine> finiteStateMachines = new ArrayList<>();
     private char[] chars;
     private boolean isEnd = false;
 
-    protected void lex() {
+    protected boolean lex() {
         openAndLoad("");
         initializeFSMList();
+
+        boolean isError = false;
 
         AtomicInteger lastCorrect = new AtomicInteger(0);
         AtomicInteger active = new AtomicInteger();
@@ -67,16 +71,41 @@ public class Lexer {
                 }
                 else if(active.get() == 0 && finished.get() == 0) {
                     // TODO: error
-                    System.out.println("Unknown token!");
+                    if(lastChar != ' ') {
+                        System.out.println("Unexpected token: \"" + new String(chars, start, current - start)
+                                + "\"!");
+                        isError = true;
+                    }
                     lastCorrect.getAndIncrement();
                     break;
                 }
             }
         }
+
+        return isError;
     }
 
     private void initializeFSMList() {
         finiteStateMachines.add(new WhileFSM());
+        finiteStateMachines.add(new ProcedureFSM());
+        finiteStateMachines.add(new CaseFSM());
+        finiteStateMachines.add(new ForFSM());
+        finiteStateMachines.add(new SwitchFSM());
+        finiteStateMachines.add(new ReturnFSM());
+        finiteStateMachines.add(new ColonFSM());
+        finiteStateMachines.add(new ParenFSM());
+        finiteStateMachines.add(new OpFSM());
+        finiteStateMachines.add(new ConstFSM());
+        finiteStateMachines.add(new CondOpEqFSM());
+        finiteStateMachines.add(new CondOpLMFSM());
+        finiteStateMachines.add(new IfFSM());
+        finiteStateMachines.add(new ElseFSM());
+        finiteStateMachines.add(new FunctionFSM());
+        finiteStateMachines.add(new BoolFSM());
+        finiteStateMachines.add(new TrueFSM());
+        finiteStateMachines.add(new FalseFSM());
+        finiteStateMachines.add(new IntFSM());
+        finiteStateMachines.add(new IdentFSM());
     }
 
     private char nextChar(int current) {
@@ -90,13 +119,28 @@ public class Lexer {
     }
 
     private void createToken(int start, int end) {
-        System.out.println(new String(chars, start, end - start + 1));
+        String value = new String(chars, start, end - start + 1).trim();
+
+        Token token;
+        if(value.equals("pravda") || value.equals("nepravda") || value.matches("\\d+")) {
+            token = new Token("hodnota", value);
+        }
+        else if(checkIfIsIdent(value)) {
+            token = new Token("IDENTIFIKATOR", value);
+        }
+        else {
+            token = new Token(value, value);
+        }
+
+        tokens.add(token);
+        // test
+        System.out.println(token.getName());
     }
 
     private void openAndLoad(String filename) {
         StringBuilder stringBuilder = new StringBuilder();
         // test
-        stringBuilder.append("zatimco zaticmco zatimco");
+        stringBuilder.append("logicky a = pravda;");
         chars = stringBuilder.toString().toCharArray();
         // end of test
         /*
@@ -104,7 +148,7 @@ public class Lexer {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             String line;
             while((line = reader.readLine()) != null) {
-                stringBuilder.append(line.replaceAll("[ \n\r\t]", ""));
+                stringBuilder.append(line.replaceAll("[ +\n\r\t]", "").trim());
             }
             reader.close();
             chars = stringBuilder.toString().toCharArray();
@@ -113,5 +157,25 @@ public class Lexer {
             // TODO: error
         }
         */
+    }
+
+    private boolean checkIfIsIdent(String string) {
+        if(string.equals("pravda") || string.equals("nepravda") || string.equals("zatimco") || string.equals("pro") ||
+                string.equals("{") || string.equals("}") || string.equals("(") || string.equals(")") ||
+                string.equals(";") || string.equals(":") || string.equals("logicky") || string.equals("cislo") ||
+                string.equals("pripad") || string.equals("prepinac") || string.equals("funkce") || string.equals("+") ||
+                string.equals("procedura") || string.equals("*") || string.equals("/") || string.equals("-") ||
+                string.equals("pokud") || string.equals("pokudne") || string.equals("<=") || string.equals(">=") ||
+                string.equals("!=") || string.equals("==") || string.equals("<") || string.equals(">") ||
+                string.equals("&&") || string.equals("||") || string.equals("zastav") || string.equals("vrat") ||
+                string.equals("konst") || string.equals("=") || string.matches("\\d+")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public List<Token> getTokens() {
+        return tokens;
     }
 }
