@@ -9,12 +9,12 @@ public class RecursiveDescentParser {
 
     private boolean isError = false;
 
-    public  RecursiveDescentParser(List<String> data) {
+    protected RecursiveDescentParser(List<String> data) {
         iterator = data.iterator();
     }
 
     private void getNextSymbol() {
-        if (iterator.hasNext()) {
+        if(iterator.hasNext()) {
             symbol = iterator.next();
         }
         else {
@@ -36,7 +36,7 @@ public class RecursiveDescentParser {
         }
     }
 
-    public boolean program() {
+    protected boolean program() {
         getNextSymbol();
         globPromenne();
         funkceProcedury();
