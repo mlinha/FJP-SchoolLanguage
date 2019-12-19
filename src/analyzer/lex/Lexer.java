@@ -147,7 +147,7 @@ public class Lexer {
     private void openAndLoad(String filename) {
         StringBuilder stringBuilder = new StringBuilder();
         // test
-        stringBuilder.append("logicky a = pravda; logicky b = nepravda; procedura b(cislo o, cislo p) {}");
+        stringBuilder.append("logicky a = pravda; cislo b = 5 + a; procedura b(cislo o, cislo p) {}");
         chars = stringBuilder.toString().toCharArray();
         // end of test
         /*

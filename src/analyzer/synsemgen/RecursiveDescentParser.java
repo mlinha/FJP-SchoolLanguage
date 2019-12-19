@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecursiveDescentParser {
 
@@ -75,25 +76,16 @@ public class RecursiveDescentParser {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
-            /*
-            if(symbol.equals("hodnota")) {
-                verify(symbol, "hodnota");
-            }
-            else if(symbol.equals("IDENTIFIKATOR")) {
-                verify(symbol, "IDENTIFIKATOR");
-            }
-            */
-            vyraz();
-            /*
-            else {
-                if(!symbol.equals("end")) {
-                    System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
-                    getNextSymbol();
-                }
-                isSyntaxError = true;
-            }
 
-             */
+            if(type != null && type.equals("cislo")) {
+                matVyraz();
+            }
+            else if(type != null && type.equals("logicky")) {
+                logVyraz();
+            }
+            else {
+                // TODO: error
+            }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
             if(!isSyntaxError && !isSemanticError) {
@@ -121,18 +113,14 @@ public class RecursiveDescentParser {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
-            if(symbol.equals("hodnota")) {
-                verify(symbol, "hodnota");
+            if(type != null && type.equals("cislo")) {
+                matVyraz();
             }
-            else if(symbol.equals("volani funkce")) {
-                volaniFunkce();
+            else if(type != null && type.equals("logicky")) {
+                logVyraz();
             }
             else {
-                if(!symbol.equals("end")) {
-                    System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
-                    getNextSymbol();
-                }
-                isSyntaxError = true;
+                // TODO: error
             }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
@@ -263,7 +251,7 @@ public class RecursiveDescentParser {
         if(symbol.equals("end")) {
             return;
         }
-        vracHodnoty();
+        vracHodnoty(null);
     }
 
     private void vnitrekProcedury() {
@@ -290,7 +278,25 @@ public class RecursiveDescentParser {
                 viceAkci();
                 break;
             case "IDENTIFIKATOR":
+                String name = token.getValue();
                 verify(symbol, "IDENTIFIKATOR");
+                if(symbol.equals("(")) {
+                    volaniFunkce(name);
+                }
+                else {
+                    SymbolTableEntry entry = findVar(name);
+                    String type = "";
+                    if(entry != null) {
+                        type = entry.getType();
+                    }
+                    verify(symbol, "=");
+                    if(type.equals("logicky")) {
+                        logVyraz();
+                    }
+                    else {
+                        matVyraz();
+                    }
+                }
                 viceAkci();
                 // TODO vyraz, volani
                 break;
@@ -356,7 +362,7 @@ public class RecursiveDescentParser {
             case "pro":
                 verify(symbol, "pro");
                 verify(symbol, "(");
-                vyraz();
+                matVyraz();
                 if(symbol.equals("end")) {
                     return;
                 }
@@ -366,7 +372,7 @@ public class RecursiveDescentParser {
                     return;
                 }
                 verify(symbol, ";");
-                vyraz();
+                matVyraz();
                 if(symbol.equals("end")) {
                     return;
                 }
@@ -482,14 +488,18 @@ public class RecursiveDescentParser {
         }
     }
 
-    private void volaniFunkce() {
+    private void volaniFunkce(String name) {
         if(symbol.equals("end")) {
             return;
         }
-        verify(symbol, "IDENTIFIKATOR");
+        SymbolTableEntry entry = findFunction(name);
+        List<String> parameterTypes = null;
+        if(entry != null) {
+            parameterTypes = entry.getParameterTypes();
+        }
         verify(symbol, "(");
         if(!symbol.equals(")")) {
-            vstupHodnoty();
+            vstupHodnoty(parameterTypes, 0);
             if(symbol.equals("end")) {
                 return;
             }
@@ -498,32 +508,71 @@ public class RecursiveDescentParser {
         verify(symbol, ";");
     }
 
-    private void vstupHodnoty() {
+    private void vstupHodnoty(List<String> parameterTypes, int index) {
         if(symbol.equals("end")) {
             return;
         }
         if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getName();
             verify(symbol, "IDENTIFIKATOR");
+            if(!isSyntaxError && !isSemanticError) {
+                checkIfIsUsableForOps(name, "logicky");
+            }
+            if(symbol.equals("(")) {
+                volaniFunkce(name); // TODO: not sure
+            }
         }
         else {
+            String value = token.getValue();
+            String type;
             verify(symbol, "hodnota");
+            if(value.matches("\\d+")) {
+                type = "cislo";
+            }
+            else {
+                type = "logicky";
+            }
+            if(!isSyntaxError && !isSemanticError && !type.equals(parameterTypes.get(index))) {
+                isSemanticError = true;
+                System.out.println(""); // TODO: error
+            }
         }
         if(symbol.equals(",")) {
             verify(symbol, ",");
-            vstupHodnoty();
+            index++;
+            vstupHodnoty(parameterTypes, index);
         }
     }
 
-    private void vracHodnoty() {
+    private void vracHodnoty(String typeOut) {
         if(symbol.equals("end")) {
             return;
         }
         verify(symbol, "vrat");
         if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getName();
             verify(symbol, "IDENTIFIKATOR");
+            if(!isSyntaxError && !isSemanticError) {
+                checkIfIsUsableForOps(name, typeOut);
+            }
+            if(symbol.equals("(")) {
+                volaniFunkce(name);
+            }
         }
         else if(symbol.equals("hodnota")) {
+            String value = token.getValue();
+            String type;
             verify(symbol, "hodnota");
+            if(value.matches("\\d+")) {
+                type = "cislo";
+            }
+            else {
+                type = "logicky";
+            }
+            if(!isSyntaxError && !isSemanticError && !type.equals(typeOut)) {
+                isSemanticError = true;
+                System.out.println(""); // TODO: error
+            }
         }
         verify(symbol, ";");
     }
@@ -542,7 +591,7 @@ public class RecursiveDescentParser {
         }
         verify(symbol, "prepinac");
         verify(symbol, "(");
-        vyraz();
+        matVyraz();
         if(symbol.equals("end")) {
             return;
         }
@@ -560,7 +609,7 @@ public class RecursiveDescentParser {
             return;
         }
         verify(symbol, "pripad");
-        vyraz();
+        matVyraz();
         if(symbol.equals("end")) {
             return;
         }
@@ -591,13 +640,6 @@ public class RecursiveDescentParser {
                 return "logicky";
         }
         return null;
-    }
-
-    private void operator() {
-        if(symbol.equals("end")) {
-            return;
-        }
-
     }
 
     private void podmOperator() {
@@ -633,12 +675,40 @@ public class RecursiveDescentParser {
         verify(symbol, "!");
     }
 
-    private void vyraz() {
-        term();
-        vyraz2();
+    private void logVyraz() {
+        if(symbol.equals("hodnota")) {
+            String value = token.getValue();
+            verify(symbol, "hodnota");
+            if(!value.equals("pravda") && !value.equals("nepravda")) {
+                isSemanticError = true;
+                System.out.println(); // TODO: error
+            }
+        }
+        else if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getName();
+            verify(symbol, "IDENTIFIKATOR");
+            if(!isSyntaxError && !isSemanticError) {
+                checkIfIsUsableForOps(name, "logicky");
+            }
+            if(symbol.equals("(")) {
+                volaniFunkce(name);
+            }
+        }
+        else {
+            if(!symbol.equals("end")) {
+                System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
+                getNextSymbol();
+            }
+            isSyntaxError = true;
+        }
     }
 
-    private void  vyraz2() {
+    private void matVyraz() {
+        term();
+        matVyraz2();
+    }
+
+    private void matVyraz2() {
         if(symbol.equals("+")) {
             verify(symbol, "+");
         }
@@ -649,7 +719,7 @@ public class RecursiveDescentParser {
             return;
         }
         term();
-        vyraz2();
+        matVyraz2();
     }
 
     private void term() {
@@ -672,27 +742,37 @@ public class RecursiveDescentParser {
     }
 
     private void faktor() {
-        if(symbol.equals("(")) {
-            verify(symbol, "(");
-            vyraz();
-            verify(symbol, ")");
-        }
-        else if(symbol.equals("IDENTIFIKATOR")) {
-            String name = token.getName();
-            verify(symbol, "IDENTIFIKATOR");
-            if(symbol.equals("(")) {
-                volaniFunkce();
-            }
-        }
-        else if(symbol.equals("hodnota")) {
-            verify(symbol, "hodnota");
-        }
-        else {
-            if(!symbol.equals("end")) {
-                System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
-                getNextSymbol();
-            }
-            isSyntaxError = true;
+        switch (symbol) {
+            case "(":
+                verify(symbol, "(");
+                matVyraz();
+                verify(symbol, ")");
+                break;
+            case "IDENTIFIKATOR":
+                String name = token.getValue();
+                verify(symbol, "IDENTIFIKATOR");
+                if(!isSyntaxError && !isSemanticError) {
+                    checkIfIsUsableForOps(name, "cislo");
+                }
+                if(symbol.equals("(")) {
+                    volaniFunkce(name);
+                }
+                break;
+            case "hodnota":
+                String value = token.getValue();
+                verify(symbol, "hodnota");
+                if(!isSyntaxError && !isSemanticError && !value.matches("\\d+")) {
+                    isSemanticError = true;
+                    System.out.println(""); // TODO: error
+                }
+                break;
+            default:
+                if (!symbol.equals("end")) {
+                    System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
+                    getNextSymbol();
+                }
+                isSyntaxError = true;
+                break;
         }
     }
 
@@ -707,8 +787,75 @@ public class RecursiveDescentParser {
         });
     }
 
-    private void checkIfIsUsable(String name) {
+    private void checkIfIsUsableForOps(String name, String type) {
+        AtomicBoolean isFound = new AtomicBoolean(false);
+        SymbolTable symbolTable = symbolTables.peek();
 
+        checkAllEntries(name, type, isFound, symbolTable);
+
+        if(!isFound.get() && symbolTables.size() > 1) {
+            symbolTable = symbolTables.firstElement();
+            checkAllEntries(name, type, isFound, symbolTable);
+        }
+
+        if(!isFound.get()) {
+            isSemanticError = true;
+            System.out.println("not found"); // TODO: error
+        }
+    }
+
+    private void checkAllEntries(String name, String type, AtomicBoolean isFound, SymbolTable symbolTable) {
+        for(SymbolTableEntry entry : symbolTable.getEntries()) {
+            if(entry.getName().equals(name)) {
+                if(!entry.getType().equals(type)) {
+                    isSemanticError = true;
+                    System.out.println("wrong type"); // TODO: error
+                }
+                isFound.set(true);
+                break;
+            }
+        }
+    }
+
+    private SymbolTableEntry findFunction(String name) {
+        SymbolTable symbolTable = symbolTables.firstElement();
+        for(SymbolTableEntry entry : symbolTable.getEntries()) {
+            if(entry.getName().equals(name)) {
+                if(entry.getElementType().equals("func") || entry.getElementType().equals("proc")) {
+                    return entry;
+                }
+                else {
+                    isSemanticError = true;
+                    System.out.println("not a func"); // TODO: error
+                    return null;
+                }
+            }
+        }
+
+        isSemanticError = true;
+        System.out.println("not found"); // TODO: error
+        return null;
+    }
+
+    private SymbolTableEntry findVar(String name) {
+        /*
+        SymbolTable symbolTable = symbolTables.firstElement();
+        for(SymbolTableEntry entry : symbolTable.getEntries()) {
+            if(entry.getName().equals(name)) {
+                if(entry.getElementType().equals("func") || entry.getElementType().equals("proc")) {
+                    return entry;
+                }
+                else {
+                    isSemanticError = true;
+                    System.out.println("not a func"); // TODO: error
+                    return null;
+                }
+            }
+        }
+
+        isSemanticError = true;
+        System.out.println("not found"); // TODO: error*/
+        return null;
     }
 
     private boolean checkTypes(String firstType, String secondType) {
