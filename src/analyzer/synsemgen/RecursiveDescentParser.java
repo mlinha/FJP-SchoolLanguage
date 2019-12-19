@@ -1,23 +1,31 @@
-package analyzer.syntax;
+package analyzer.synsemgen;
 
 import analyzer.Token;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 public class RecursiveDescentParser {
+
     private Iterator<Token> iterator;
     private String symbol;
+    private Token token;
+    private Stack<SymbolTable> symbolTables;
 
-    private boolean isError = false;
+    private boolean isSyntaxError = false;
+    private boolean isSemanticError = false;
 
     protected RecursiveDescentParser(List<Token> tokens) {
         iterator = tokens.iterator();
+        symbolTables = new Stack<>();
     }
 
     private void getNextSymbol() {
         if(iterator.hasNext()) {
-            symbol = iterator.next().getName();
+            token = iterator.next();
+            symbol = token.getName();
         }
         else {
             symbol = "end";
@@ -34,108 +42,157 @@ public class RecursiveDescentParser {
                 System.out.println("Error: expected \"" + with + "\", was \"" + symbol + "\"");
             }
             getNextSymbol();
-            isError = true;
+            isSyntaxError = true;
         }
     }
 
     protected boolean program() {
+        symbolTables.push(new SymbolTable());
+
         getNextSymbol();
         globPromenne();
         funkceProcedury();
 
-        return isError;
+        symbolTables.pop();
+
+        return isSyntaxError;
     }
 
     private void globPromenne() {
+        SymbolTable symbolTable = symbolTables.peek();
         if(symbol.equals("end")) {
             return;
         }
         if(!symbol.equals("procedura") && !symbol.equals("funkce")) {
-            modifikator();
+            boolean isConst = modifikator();
             if(symbol.equals("end")) {
                 return;
             }
-            typ();
+            String type = typ();
             if(symbol.equals("end")) {
                 return;
             }
+            String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
+            /*
             if(symbol.equals("hodnota")) {
                 verify(symbol, "hodnota");
             }
-            else if(symbol.equals("volani funkce")) {
-                verify(symbol, "volani funkce");
+            else if(symbol.equals("IDENTIFIKATOR")) {
+                verify(symbol, "IDENTIFIKATOR");
             }
+            */
+            vyraz();
+            /*
             else {
                 if(!symbol.equals("end")) {
                     System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
                     getNextSymbol();
                 }
-                isError = true;
+                isSyntaxError = true;
             }
+
+             */
             verify(symbol, ";");
+            checkIfExistsInScope(symbolTable.getEntries(), name, "var");
+            if(!isSyntaxError && !isSemanticError) {
+                symbolTable.getEntries().add(new SymbolTableEntry(name, type, isConst, "var", null));
+            }
             globPromenne();
         }
     }
 
     private void lokPromenne() {
+        SymbolTable symbolTable = symbolTables.peek();
         if(symbol.equals("end")) {
             return;
         }
-        if(!symbol.equals("akce")) { // TODO: action names
-            typ();
+        if(!symbol.equals("pokud") && !symbol.equals("pro") && !symbol.equals("zatimco") &&
+                !symbol.equals("IDENTIFIKATOR") && !symbol.equals("vrat")) {
+            boolean isConst = modifikator();
             if(symbol.equals("end")) {
                 return;
             }
+            String type = typ();
+            if(symbol.equals("end")) {
+                return;
+            }
+            String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
             if(symbol.equals("hodnota")) {
                 verify(symbol, "hodnota");
             }
             else if(symbol.equals("volani funkce")) {
-                verify(symbol, "volani funkce");
+                volaniFunkce();
             }
             else {
                 if(!symbol.equals("end")) {
                     System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
                     getNextSymbol();
                 }
-                isError = true;
+                isSyntaxError = true;
             }
             verify(symbol, ";");
+            checkIfExistsInScope(symbolTable.getEntries(), name, "var");
+            if(!isSyntaxError && !isSemanticError) {
+                symbolTable.getEntries().add(new SymbolTableEntry(name, type, isConst, "var", null));
+            }
             lokPromenne();
         }
     }
 
-    private void modifikator() {
+    private boolean modifikator() {
         if(symbol.equals("end")) {
-            return;
+            return false;
         }
         if(symbol.equals("konst")) {
             verify(symbol, "konst");
+
+            return true;
         }
+
+        return false;
     }
 
     private void funkceProcedury() {
+        SymbolTable symbolTable = symbolTables.peek();
         if(symbol.equals("end")) {
             return;
         }
         if(symbol.equals("funkce")) {
             verify(symbol, "funkce");
-            typ();
+            String type = typ();
             if(symbol.equals("end")) {
                 return;
             }
+            String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "(");
-            parametry();
+            List<SymbolTableEntry> parameters = new ArrayList<>();
+            parametry(parameters);
             if(symbol.equals("end")) {
                 return;
             }
             verify(symbol, ")");
             verify(symbol, "{");
+
+            symbolTables.push(new SymbolTable());
+
+            List<String> parameterTypes = new ArrayList<>();
+            parameters.forEach(entry -> {
+                symbolTables.peek().getEntries().add(entry);
+                parameterTypes.add(entry.getType());
+            });
+
+            checkIfExistsInScope(symbolTable.getEntries(), name, "func");
+            if(!isSyntaxError && !isSemanticError) {
+                symbolTable.getEntries().add(new SymbolTableEntry(name, type, false, "func", parameterTypes));
+            }
+
             vnitrekFunkce();
+            symbolTables.pop();
             if(symbol.equals("end")) {
                 return;
             }
@@ -144,32 +201,53 @@ public class RecursiveDescentParser {
         }
         else if(symbol.equals("procedura")) {
             verify(symbol, "procedura");
+            String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "(");
-            parametry();
+            List<SymbolTableEntry> parameters = new ArrayList<>();
+            parametry(parameters);
             if(symbol.equals("end")) {
                 return;
             }
             verify(symbol, ")");
             verify(symbol, "{");
+
+            symbolTables.push(new SymbolTable());
+
+            List<String> parameterTypes = new ArrayList<>();
+            parameters.forEach(entry -> {
+                symbolTables.peek().getEntries().add(entry);
+                parameterTypes.add(entry.getType());
+            });
+
+            checkIfExistsInScope(symbolTable.getEntries(), name, "proc");
+            if(!isSyntaxError && !isSemanticError) {
+                symbolTable.getEntries().add(new SymbolTableEntry(name, "", false, "proc", parameterTypes));
+            }
+
             vnitrekProcedury();
+            symbolTables.pop();
             verify(symbol, "}");
             funkceProcedury();
         }
     }
 
-    private void parametry() {
+    private void parametry(List<SymbolTableEntry> parameters) {
         if(symbol.equals("end")) {
             return;
         }
-        typ();
+        String type = typ();
         if(symbol.equals("end")) {
             return;
         }
+        String name = token.getValue();
         verify(symbol, "IDENTIFIKATOR");
+        if(!isSyntaxError && !isSemanticError) {
+            parameters.add(new SymbolTableEntry(name, type, false, "var", null));
+        }
         if(symbol.equals(",")) {
             verify(symbol, ",");
-            parametry();
+            parametry(parameters);
         }
     }
 
@@ -216,18 +294,8 @@ public class RecursiveDescentParser {
                 viceAkci();
                 // TODO vyraz, volani
                 break;
-            case "prepinac":
-                prepinani();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                viceAkci();
-                break;
             case "zatimco":
-            case "delej":
             case "pro":
-            case "prokazdy":
-            case "opakuj":
                 cyklus();
                 if(symbol.equals("end")) {
                     return;
@@ -285,24 +353,6 @@ public class RecursiveDescentParser {
                 }
                 verify(symbol, "}");
                 break;
-            case "delej":
-                verify(symbol, "delej");
-                verify(symbol, "{");
-                viceAkci();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                verify(symbol, "}");
-                verify(symbol, "zatimco");
-                verify(symbol, "(");
-                slozitaPodminka();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                verify(symbol, ")");
-                verify(symbol, ";");
-
-                break;
             case "pro":
                 verify(symbol, "pro");
                 verify(symbol, "(");
@@ -328,44 +378,7 @@ public class RecursiveDescentParser {
                 }
                 verify(symbol, "}");
                 break;
-            case "prokazdy":
-                verify(symbol, "prokazdy");
-                verify(symbol, "(");
-                verify(symbol, "pole");
-                verify(symbol, ")");
-                verify(symbol, "{");
-                viceAkci();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                verify(symbol, "}");
-
-                break;
-            case "opakuj":
-                verify(symbol, "opakuj");
-                verify(symbol, "{");
-                viceAkci();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                verify(symbol, "}");
-                verify(symbol, "dokud");
-                verify(symbol, "(");
-                slozitaPodminka();
-                if(symbol.equals("end")) {
-                    return;
-                }
-                verify(symbol, ")");
-                verify(symbol, ";");
-                break;
         }
-    }
-
-    private void vyraz() {
-        if(symbol.equals("end")) {
-            return;
-        }
-
     }
 
     private void podminka() {
@@ -565,31 +578,19 @@ public class RecursiveDescentParser {
         }
     }
 
-    private void typ() {
+    private String typ() {
         if(symbol.equals("end")) {
-            return;
+            return null;
         }
         switch (symbol) {
             case "cislo":
                 verify(symbol, "cislo");
-                break;
+                return "cislo";
             case "logicky":
                 verify(symbol, "logicky");
-                break;
-            case "text":
-                verify(symbol, "text");
-                break;
-            case "znak":
-                verify(symbol, "znak");
-                break;
+                return "logicky";
         }
-    }
-
-    private void pole() {
-        if(symbol.equals("end")) {
-            return;
-        }
-
+        return null;
     }
 
     private void operator() {
@@ -630,5 +631,114 @@ public class RecursiveDescentParser {
             return;
         }
         verify(symbol, "!");
+    }
+
+    private void vyraz() {
+        term();
+        vyraz2();
+    }
+
+    private void  vyraz2() {
+        if(symbol.equals("+")) {
+            verify(symbol, "+");
+        }
+        else if(symbol.equals("-")) {
+            verify(symbol, "-");
+        }
+        else {
+            return;
+        }
+        term();
+        vyraz2();
+    }
+
+    private void term() {
+        faktor();
+        term2();
+    }
+
+    private void term2() {
+        if(symbol.equals("*")) {
+            verify(symbol, "*");
+        }
+        else if(symbol.equals("/")) {
+            verify(symbol, "/");
+        }
+        else {
+            return;
+        }
+        faktor();
+        term2();
+    }
+
+    private void faktor() {
+        if(symbol.equals("(")) {
+            verify(symbol, "(");
+            vyraz();
+            verify(symbol, ")");
+        }
+        else if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getName();
+            verify(symbol, "IDENTIFIKATOR");
+            if(symbol.equals("(")) {
+                volaniFunkce();
+            }
+        }
+        else if(symbol.equals("hodnota")) {
+            verify(symbol, "hodnota");
+        }
+        else {
+            if(!symbol.equals("end")) {
+                System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
+                getNextSymbol();
+            }
+            isSyntaxError = true;
+        }
+    }
+
+    //#############SEMANTIC###############
+
+    private void checkIfExistsInScope(List<SymbolTableEntry> entries, String name, String elementType) {
+        entries.forEach(entry -> {
+            if(entry.getElementType().equals(elementType) && entry.getName().equals(name)) {
+                isSemanticError = true;
+                System.out.println("Element \"" + elementType + "\" name: \"" + name + "\" already defined in the scope!");
+            }
+        });
+    }
+
+    private void checkIfIsUsable(String name) {
+
+    }
+
+    private boolean checkTypes(String firstType, String secondType) {
+        if(!isSyntaxError && !isSemanticError) {
+            if(firstType.equals(secondType)) {
+                return true;
+            }
+            else {
+                isSemanticError = true;
+
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private void addEntry(SymbolTable symbolTable) {
+
+    }
+
+    private boolean isFunc() {
+        return true;
+    }
+
+    private boolean isProc() {
+        return true;
+    }
+
+    private boolean isVar() {
+        return true;
     }
 }

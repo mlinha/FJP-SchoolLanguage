@@ -3,8 +3,7 @@ package app;
 import analyzer.Analyzer;
 import analyzer.Token;
 import analyzer.lex.LexicalAnalyzer;
-import analyzer.syntax.RecursiveDescentParser;
-import analyzer.syntax.SyntaxAnalyzer;
+import analyzer.synsemgen.SyntaxSemanticAnalyzerGenerator;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +32,7 @@ public class Main {
         }
         List<Token> tokens = ((LexicalAnalyzer) analyzer).getTokens();
         System.out.println();
-        analyzer = new SyntaxAnalyzer(tokens);
+        analyzer = new SyntaxSemanticAnalyzerGenerator(tokens);
         System.out.println("---------Running syntax analyzer---------");
         isError = analyzer.analyze();
         if(!isError) {

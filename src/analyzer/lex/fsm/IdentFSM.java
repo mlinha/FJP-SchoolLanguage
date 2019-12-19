@@ -28,6 +28,10 @@ public class IdentFSM extends FiniteStateMachine {
         if(Character.toString(input).matches("[a-zA-Z0-9]")) {
             currentState = 1;
         }
+        else if(input == ' ' || input == ';' || input == ',' || input == '(' || input == ')') {
+            currentState = 2;
+            isFinished = true;
+        }
         else {
             isError = true;
         }

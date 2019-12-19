@@ -65,8 +65,13 @@ public class Lexer {
                 current++;
 
                 if(active.get() == 0 && finished.get() > 0) {
-                    createToken(start, lastCorrect.get());
-                    lastCorrect.getAndIncrement();
+                    if(!finiteStateMachines.get(19).isError() || !finiteStateMachines.get(20).isError()) {
+                        createToken(start, lastCorrect.get() - 1);
+                    }
+                    else {
+                        createToken(start, lastCorrect.get());
+                        lastCorrect.getAndIncrement();
+                    }
                     break;
                 }
                 else if(active.get() == 0 && finished.get() == 0) {
@@ -105,7 +110,9 @@ public class Lexer {
         finiteStateMachines.add(new TrueFSM());
         finiteStateMachines.add(new FalseFSM());
         finiteStateMachines.add(new IntFSM());
+        finiteStateMachines.add(new IntValFSM());
         finiteStateMachines.add(new IdentFSM());
+        finiteStateMachines.add(new CommaFSM());
     }
 
     private char nextChar(int current) {
@@ -140,7 +147,7 @@ public class Lexer {
     private void openAndLoad(String filename) {
         StringBuilder stringBuilder = new StringBuilder();
         // test
-        stringBuilder.append("logicky a = pravda;");
+        stringBuilder.append("logicky a = pravda; logicky b = nepravda; procedura b(cislo o, cislo p) {}");
         chars = stringBuilder.toString().toCharArray();
         // end of test
         /*
@@ -160,19 +167,15 @@ public class Lexer {
     }
 
     private boolean checkIfIsIdent(String string) {
-        if(string.equals("pravda") || string.equals("nepravda") || string.equals("zatimco") || string.equals("pro") ||
-                string.equals("{") || string.equals("}") || string.equals("(") || string.equals(")") ||
-                string.equals(";") || string.equals(":") || string.equals("logicky") || string.equals("cislo") ||
-                string.equals("pripad") || string.equals("prepinac") || string.equals("funkce") || string.equals("+") ||
-                string.equals("procedura") || string.equals("*") || string.equals("/") || string.equals("-") ||
-                string.equals("pokud") || string.equals("pokudne") || string.equals("<=") || string.equals(">=") ||
-                string.equals("!=") || string.equals("==") || string.equals("<") || string.equals(">") ||
-                string.equals("&&") || string.equals("||") || string.equals("zastav") || string.equals("vrat") ||
-                string.equals("konst") || string.equals("=") || string.matches("\\d+")) {
-            return false;
-        }
-
-        return true;
+        return !string.equals("pravda") && !string.equals("nepravda") && !string.equals("zatimco") && !string.equals("pro") &&
+                !string.equals("{") && !string.equals("}") && !string.equals("(") && !string.equals(")") &&
+                !string.equals(";") && !string.equals(":") && !string.equals("logicky") && !string.equals("cislo") &&
+                !string.equals("pripad") && !string.equals("prepinac") && !string.equals("funkce") && !string.equals("+") &&
+                !string.equals("procedura") && !string.equals("*") && !string.equals("/") && !string.equals("-") &&
+                !string.equals("pokud") && !string.equals("pokudne") && !string.equals("<=") && !string.equals(">=") &&
+                !string.equals("!=") && !string.equals("==") && !string.equals("<") && !string.equals(">") &&
+                !string.equals("&&") && !string.equals("||") && !string.equals("zastav") && !string.equals("vrat") &&
+                !string.equals("konst") && !string.equals("=") && !string.equals(",") && !string.matches("\\d+");
     }
 
     public List<Token> getTokens() {
