@@ -85,6 +85,8 @@ public class RecursiveDescentParser {
             }
             else {
                 // TODO: error
+                System.out.println("no type");
+                matVyraz();
             }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
@@ -121,6 +123,8 @@ public class RecursiveDescentParser {
             }
             else {
                 // TODO: error
+                System.out.println("no type");
+                matVyraz();
             }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
@@ -289,6 +293,10 @@ public class RecursiveDescentParser {
                     if(entry != null) {
                         type = entry.getType();
                     }
+                    if(entry != null && entry.isConst()) {
+                        isSemanticError = true;
+                        System.out.println(); // TODO: error
+                    }
                     verify(symbol, "=");
                     if(type.equals("logicky")) {
                         logVyraz();
@@ -388,15 +396,76 @@ public class RecursiveDescentParser {
     }
 
     private void podminka() {
+        String typeL = "";
+        String typeR = "";
         if(symbol.equals("end")) {
             return;
         }
-        verify(symbol, "IDENTIFIKATOR");
-        podmOperator();
+        if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getValue();
+            verify(symbol, "IDENTIFIKATOR");
+            SymbolTableEntry entry = findIdent(name);
+            if(entry != null) {
+                typeL = entry.getType();
+            }
+            if(symbol.equals("(")) {
+                if(entry != null && !isSyntaxError && !isSemanticError && entry.getElementType().equals("proc")) {
+                    System.out.println("not a function"); // TODO: error
+                }
+                volaniFunkce(name);
+            }
+        }
+        else if(symbol.equals("hodnota")) {
+            String value = token.getValue();
+            verify(symbol, "hodnota");
+            if(value.matches("\\d+")) {
+                typeL = "cislo";
+            }
+            else {
+                typeL = "logicky";
+            }
+        }
+        else {
+            // TODO: error
+            verify(symbol, "value or ident");
+        }
+        podmOperator(typeL);
         if(symbol.equals("end")) {
             return;
         }
-        verify(symbol, "IDENTIFIKATOR");
+        if(symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getValue();
+            verify(symbol, "IDENTIFIKATOR");
+            SymbolTableEntry entry = findIdent(name);
+            if(entry != null) {
+                typeR = entry.getType();
+            }
+            if(symbol.equals("(")) {
+                if(entry != null && !isSyntaxError && !isSemanticError && entry.getElementType().equals("proc")) {
+                    System.out.println("not a function"); // TODO: error
+                }
+                volaniFunkce(name);
+            }
+        }
+        else if(symbol.equals("hodnota")) {
+            String value = token.getValue();
+            verify(symbol, "hodnota");
+            if(value.matches("\\d+")) {
+                typeR = "cislo";
+            }
+            else {
+                typeR = "logicky";
+            }
+        }
+        else {
+            // TODO: error
+            verify(symbol, "value or ident");
+        }
+
+        if(!typeL.equals(typeR)) {
+            isSemanticError = true;
+            System.out.println(); // TODO: error
+        }
     }
 
     private void slozitaPodminka() {
@@ -642,28 +711,47 @@ public class RecursiveDescentParser {
         return null;
     }
 
-    private void podmOperator() {
+    private void podmOperator(String type) {
         if(symbol.equals("end")) {
             return;
         }
         switch (symbol) {
             case ">":
                 verify(symbol, ">");
+                if(type.equals("logicky")) {
+                    System.out.println(); // TODO: error
+                    isSemanticError = true;
+                }
                 break;
             case "<":
                 verify(symbol, "<");
+                if(type.equals("logicky")) {
+                    System.out.println(); // TODO: error
+                    isSemanticError = true;
+                }
                 break;
             case "<=":
                 verify(symbol, "<=");
+                if(type.equals("logicky")) {
+                    System.out.println(); // TODO: error
+                    isSemanticError = true;
+                }
                 break;
             case ">=":
                 verify(symbol, ">=");
+                if(type.equals("logicky")) {
+                    System.out.println(); // TODO: error
+                    isSemanticError = true;
+                }
                 break;
             case "==":
                 verify(symbol, "==");
                 break;
             case "!=":
                 verify(symbol, "!=");
+                break;
+            default:
+                verify(symbol, "conditional operator");
                 break;
         }
     }
@@ -776,7 +864,7 @@ public class RecursiveDescentParser {
         }
     }
 
-    //#############SEMANTIC###############
+    //############################SEMANTIC##############################
 
     private void checkIfExistsInScope(List<SymbolTableEntry> entries, String name, String elementType) {
         entries.forEach(entry -> {
@@ -838,23 +926,60 @@ public class RecursiveDescentParser {
     }
 
     private SymbolTableEntry findVar(String name) {
-        /*
-        SymbolTable symbolTable = symbolTables.firstElement();
+        SymbolTable symbolTable = symbolTables.peek();
         for(SymbolTableEntry entry : symbolTable.getEntries()) {
             if(entry.getName().equals(name)) {
-                if(entry.getElementType().equals("func") || entry.getElementType().equals("proc")) {
+                if(entry.getElementType().equals("var")) {
                     return entry;
                 }
                 else {
                     isSemanticError = true;
-                    System.out.println("not a func"); // TODO: error
+                    System.out.println("not a var"); // TODO: error
                     return null;
                 }
             }
         }
 
+        if(symbolTables.size() > 1) {
+            symbolTable = symbolTables.firstElement();
+            for(SymbolTableEntry entry : symbolTable.getEntries()) {
+                if(entry.getName().equals(name)) {
+                    if(entry.getElementType().equals("var")) {
+                        return entry;
+                    }
+                    else {
+                        isSemanticError = true;
+                        System.out.println("not a var"); // TODO: error
+                        return null;
+                    }
+                }
+            }
+        }
+
         isSemanticError = true;
-        System.out.println("not found"); // TODO: error*/
+        System.out.println("not found"); // TODO: error
+        return null;
+    }
+
+    private SymbolTableEntry findIdent(String name) {
+        SymbolTable symbolTable = symbolTables.peek();
+        for(SymbolTableEntry entry : symbolTable.getEntries()) {
+            if(entry.getName().equals(name)) {
+               return entry;
+            }
+        }
+
+        if(symbolTables.size() > 1) {
+            symbolTable = symbolTables.firstElement();
+            for(SymbolTableEntry entry : symbolTable.getEntries()) {
+                if(entry.getName().equals(name)) {
+                    return entry;
+                }
+            }
+        }
+
+        isSemanticError = true;
+        System.out.println("not found"); // TODO: error
         return null;
     }
 
@@ -873,19 +998,7 @@ public class RecursiveDescentParser {
         return false;
     }
 
-    private void addEntry(SymbolTable symbolTable) {
+    //############################GENERATOR##############################
 
-    }
 
-    private boolean isFunc() {
-        return true;
-    }
-
-    private boolean isProc() {
-        return true;
-    }
-
-    private boolean isVar() {
-        return true;
-    }
 }

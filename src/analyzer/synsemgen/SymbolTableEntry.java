@@ -50,4 +50,12 @@ public class SymbolTableEntry {
     public void setElementType(String elementType) {
         this.elementType = elementType;
     }
+
+    public boolean isConst() {
+        return isConst;
+    }
+
+    public void setConst(boolean aConst) {
+        isConst = aConst;
+    }
 }
