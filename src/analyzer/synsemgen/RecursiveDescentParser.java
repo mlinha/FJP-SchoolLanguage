@@ -305,6 +305,7 @@ public class RecursiveDescentParser {
                         matVyraz();
                     }
                 }
+                verify(symbol, ";");
                 viceAkci();
                 // TODO vyraz, volani
                 break;

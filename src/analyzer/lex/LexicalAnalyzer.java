@@ -7,17 +7,17 @@ import java.util.List;
 
 public class LexicalAnalyzer implements Analyzer {
 
-    private String data;
+    private String fileName;
     private List<Token> tokens;
 
-    public LexicalAnalyzer(String data) {
-        this.data = data;
+    public LexicalAnalyzer(String fileName) {
+        this.fileName = fileName;
     }
 
     @Override
     public boolean analyze() {
         Lexer lexer = new Lexer();
-        boolean retval = lexer.lex();
+        boolean retval = lexer.lex(fileName);
         tokens = lexer.getTokens();
         return retval;
     }

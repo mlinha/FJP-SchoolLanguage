@@ -21,7 +21,7 @@ public class Main {
         a.add("=");
         a.add(";");
         a.add("funkce");
-        Analyzer analyzer = new LexicalAnalyzer(null);
+        Analyzer analyzer = new LexicalAnalyzer("C:\\Users\\Michal\\SchoolLanguage\\src\\file.txt");
         System.out.println("---------Running lexical analyzer---------");
         isError = analyzer.analyze(); // not functional
         if(!isError) {

@@ -3,6 +3,8 @@ package analyzer.lex;
 import analyzer.Token;
 import analyzer.lex.fsm.*;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,8 +16,8 @@ public class Lexer {
     private char[] chars;
     private boolean isEnd = false;
 
-    protected boolean lex() {
-        openAndLoad("");
+    protected boolean lex(String fileName) {
+        openAndLoad(fileName);
         initializeFSMList();
 
         boolean isError = false;
@@ -147,23 +149,24 @@ public class Lexer {
     private void openAndLoad(String filename) {
         StringBuilder stringBuilder = new StringBuilder();
         // test
-        stringBuilder.append("logicky a = pravda; cislo b = 5 + a; procedura b(cislo o, cislo p) {}");
-        chars = stringBuilder.toString().toCharArray();
+        //stringBuilder.append("logicky a = pravda; cislo b = 5 + a; procedura b(cislo o, cislo p) {}");
+        //chars = stringBuilder.toString().toCharArray();
         // end of test
-        /*
+
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             String line;
             while((line = reader.readLine()) != null) {
-                stringBuilder.append(line.replaceAll("[ +\n\r\t]", "").trim());
+                stringBuilder.append(line);
+                stringBuilder.append(" ");
             }
             reader.close();
-            chars = stringBuilder.toString().toCharArray();
+            chars = stringBuilder.toString().replaceAll("\\s+\n\r\t", " ").trim().toCharArray();
         }
         catch(Exception e) {
             // TODO: error
         }
-        */
+
     }
 
     private boolean checkIfIsIdent(String string) {
