@@ -1,17 +1,20 @@
 package analyzer.synsemgen;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SymbolTableEntry {
 
+    private int position;
+    private int level;
     private boolean isConst;
     private String name;
     private String type;
     private String elementType;
     private List<String> parameterTypes;
 
-    public SymbolTableEntry(String name, String type, boolean isConst, String elementType, List<String> parameterTypes) {
+    public SymbolTableEntry(int postion, int level, String name, String type, boolean isConst, String elementType, List<String> parameterTypes) {
+        this.position = postion;
+        this.level = level;
         this.isConst = isConst;
         this.name = name;
         this.type = type;
