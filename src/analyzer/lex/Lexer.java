@@ -115,6 +115,8 @@ public class Lexer {
         finiteStateMachines.add(new IntValFSM());
         finiteStateMachines.add(new IdentFSM());
         finiteStateMachines.add(new CommaFSM());
+        finiteStateMachines.add(new LogOpFSM());
+        finiteStateMachines.add(new NotFSM());
     }
 
     private char nextChar(int current) {
@@ -174,7 +176,8 @@ public class Lexer {
                 !string.equals("pokud") && !string.equals("pokudne") && !string.equals("<=") && !string.equals(">=") &&
                 !string.equals("!=") && !string.equals("==") && !string.equals("<") && !string.equals(">") &&
                 !string.equals("&&") && !string.equals("||") && !string.equals("zastav") && !string.equals("vrat") &&
-                !string.equals("konst") && !string.equals("=") && !string.equals(",") && !string.matches("\\d+");
+                !string.equals("konst") && !string.equals("=") && !string.equals(",") && !string.equals("!") &&
+                !string.matches("\\d+");
     }
 
     public List<Token> getTokens() {

@@ -1,8 +1,20 @@
 logicky a = pravda;
 cislo b = 5 + 6*6 + 5;
 procedura b(cislo o, cislo p) {
-    cislo u = o;
-    zatimco(o < p) {
-        u = p;
+    cislo u = 1;
+    zatimco(!(u < 2)) {
+        u = u + 1;
     }
+    b = u;
 }
+
+procedura c() {
+    b(1, 2);
+}
+
+funkce cislo f() {
+    cislo m = 5;
+    vrat 6;
+}
+
+c();

@@ -1,5 +1,6 @@
 package analyzer.synsemgen;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SymbolTableEntry {
@@ -10,16 +11,17 @@ public class SymbolTableEntry {
     private String name;
     private String type;
     private String elementType;
-    private List<String> parameterTypes;
+    private List<SymbolTableEntry> parameters;
 
-    public SymbolTableEntry(int postion, int level, String name, String type, boolean isConst, String elementType, List<String> parameterTypes) {
+    public SymbolTableEntry(int postion, int level, String name, String type, boolean isConst, String elementType,
+                            List<SymbolTableEntry> parameters) {
         this.position = postion;
         this.level = level;
         this.isConst = isConst;
         this.name = name;
         this.type = type;
         this.elementType = elementType;
-        this.parameterTypes = parameterTypes;
+        this.parameters = parameters;
     }
 
     public String getName() {
@@ -38,12 +40,12 @@ public class SymbolTableEntry {
         this.type = type;
     }
 
-    public List<String> getParameterTypes() {
-        return parameterTypes;
+    public List<SymbolTableEntry> getParameters() {
+        return parameters;
     }
 
-    public void setParameterTypes(List<String> parameterTypes) {
-        this.parameterTypes = parameterTypes;
+    public void setParameters(List<SymbolTableEntry> parameters) {
+        this.parameters = parameters;
     }
 
     public String getElementType() {
@@ -60,5 +62,28 @@ public class SymbolTableEntry {
 
     public void setConst(boolean aConst) {
         isConst = aConst;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public List<String> getParameterTypes() {
+        List<String> parameterTypes = new ArrayList<>();
+        parameters.forEach(entry -> parameterTypes.add(entry.type));
+
+        return parameterTypes;
     }
 }
