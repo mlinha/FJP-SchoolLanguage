@@ -11,6 +11,9 @@ public class IntValFSM extends FiniteStateMachine {
             case 1:
                 state1(input);
                 break;
+            case 2:
+                state2(input);
+                break;
         }
         return !(isError || isFinished);
     }
@@ -19,9 +22,11 @@ public class IntValFSM extends FiniteStateMachine {
         if(Character.toString(input).matches("[1-9]")) {
             currentState = 1;
         }
-        else if(Character.toString(input).matches("[0]")) {
+        else if(Character.toString(input).matches("0")) {
             currentState = 2;
-            isFinished = true;
+        }
+        else if(input == '-') {
+            currentState = 1;
         }
         else {
             isError = true;
@@ -34,7 +39,18 @@ public class IntValFSM extends FiniteStateMachine {
         }
         else if(input == ' ' || input == ';' || input == ',' || input == ')' || input == '+' || input == '*' ||
                 input == '-' || input == '/') {
-            currentState = 2;
+            currentState = 3;
+            isFinished = true;
+        }
+        else {
+            isError = true;
+        }
+    }
+
+    private void state2(char input) {
+        if(input == ' ' || input == ';' || input == ',' || input == ')' || input == '+' || input == '*' ||
+                input == '-' || input == '/') {
+            currentState = 3;
             isFinished = true;
         }
         else {

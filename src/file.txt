@@ -1,20 +1,13 @@
-logicky a = pravda;
-cislo b = 5 + 6*6 + 5;
-procedura b(cislo o, cislo p) {
-    cislo u = 1;
-    zatimco(!(u < 2)) {
-        u = u + 1;
-    }
-    b = u;
-}
+cislo a = 0;
 
-procedura c() {
-    b(1, 2);
-}
-
-funkce cislo f() {
-    cislo m = 5;
+funkce cislo u() {
     vrat 6;
+}
+procedura c() {
+    cislo a = 1;
+    pokud(a == 1) {
+        a = u();
+    }
 }
 
 c();
