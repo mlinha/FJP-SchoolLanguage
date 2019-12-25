@@ -1,0 +1,34 @@
+cislo a = 0;
+cislo b = 0;
+cislo c = 0;
+logicky l = pravda;
+
+funkce logicky b(cislo p) {
+    cislo o = 0;
+    logicky l = pravda;
+    zatimco(o < 10 && l == pravda) {
+        o = o + 1;
+        pokud(o == 5) {
+            l = nepravda;
+            b = p;
+        }
+    }
+
+    a = o;
+
+    vrat l;
+}
+
+funkce cislo a() {
+    l = b(33);
+
+    c = 66;
+
+    vrat a;
+}
+
+procedura start() {
+    a();
+}
+
+start();
