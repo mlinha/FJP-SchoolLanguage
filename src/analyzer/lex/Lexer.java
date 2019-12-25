@@ -77,7 +77,6 @@ public class Lexer {
                     break;
                 }
                 else if(active.get() == 0 && finished.get() == 0) {
-                    // TODO: error
                     if(lastChar != ' ') {
                         System.out.println("Unexpected token: \"" + new String(chars, start, current - start)
                                 + "\"!");
@@ -162,7 +161,8 @@ public class Lexer {
             chars = stringBuilder.toString().replaceAll("\\s+\n\r\t", " ").trim().toCharArray();
         }
         catch(Exception e) {
-            // TODO: error
+            System.out.println("Error: file couldn't be loaded!");
+            chars = new char[0];
         }
 
     }

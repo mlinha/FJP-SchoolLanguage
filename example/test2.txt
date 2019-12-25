@@ -1,0 +1,38 @@
+cislo a = 0;
+cislo b = 0;
+cislo c = 0;
+logicky l = pravda;
+
+funkce logicky b(cislo a) {
+    logicky l = pravda;
+    pokud(a == 3) {
+        l = pravda;
+        c = 2;
+    }
+    pokudne {
+        l = nepravda;
+        c = 1;
+    }
+
+    vrat l;
+}
+
+funkce cislo a() {
+    cislo a = 0;
+    pokud(l == pravda) {
+        l = nepravda;
+        a = 3;
+    }
+
+    l = b(a);
+
+    b = a;
+
+    vrat a;
+}
+
+procedura start() {
+    a();
+}
+
+start();

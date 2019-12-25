@@ -17,19 +17,14 @@ import java.util.stream.Stream;
 public class Main {
 
     public static void main(String[] args) {
-        // test
         boolean isError;
-        List<String> a = new LinkedList<>();
-        a.add("konst");
-        a.add("cislo");
-        a.add("IDENTIFIKATOR");
-        a.add("=");
-        a.add("=");
-        a.add(";");
-        a.add("funkce");
-        Analyzer analyzer = new LexicalAnalyzer("C:\\Users\\Michal\\SchoolLanguage\\src\\file.txt");
+        if(args.length == 0) {
+            System.out.println("SchoolLanguage compiler.\nRun as java -jar slc.jar <filename>");
+            return;
+        }
+        Analyzer analyzer = new LexicalAnalyzer(args[0]);
         System.out.println("---------Running lexical analyzer---------");
-        isError = analyzer.analyze(); // not functional
+        isError = analyzer.analyze();
         if(!isError) {
             System.out.println("No lexical errors detected.");
         }
@@ -41,36 +36,42 @@ public class Main {
         analyzer = new SyntaxSemanticAnalyzerGenerator(tokens);
         System.out.println("---------Running syntax and semantic analyzer and code generator---------");
         isError = analyzer.analyze();
+
+        String name = args[0].substring(0, args[0].indexOf("."));
+
         if(!isError) {
-            System.out.println("No syntax errors detected.");
+            System.out.println("No syntax and semantic errors detected.\nOutput file \"" + name + ".sl\" generated!");
         }
         else {
+            File f = new File("tmp.txt");
+            if(!f.delete()) {
+                System.out.println("Error while deleting temporary file!");
+            }
+
             return;
         }
 
-
         try {
-            sort();
+            sort(name);
+            File f = new File("tmp.txt");
+            if(!f.delete()) {
+                System.out.println("Error while deleting temporary file!");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        System.out.println();
-        // TODO: semantics
-        // end of test
     }
 
-    private static void sort() throws IOException {
+    private static void sort(String name) throws IOException {
         Map<Integer, String> data = new TreeMap<>();
-        BufferedReader reader = new BufferedReader(new FileReader("out.txt"));
+        BufferedReader reader = new BufferedReader(new FileReader("tmp.txt"));
         String line;
         while((line = reader.readLine()) != null) {
             data.put(Integer.parseInt(line.substring(0, line.indexOf(" "))), line);
         }
         reader.close();
 
-        BufferedWriter writer = new BufferedWriter(new FileWriter("fin.txt"));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(name + ".sl"));
 
         for (String out : data.values()){
             writer.write(out);
