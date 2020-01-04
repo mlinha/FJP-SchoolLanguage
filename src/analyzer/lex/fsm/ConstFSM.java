@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - konst
+ */
 public class ConstFSM extends FiniteStateMachine {
 
     @Override

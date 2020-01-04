@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro identifikátor
+ */
 public class IdentFSM extends FiniteStateMachine {
 
     @Override

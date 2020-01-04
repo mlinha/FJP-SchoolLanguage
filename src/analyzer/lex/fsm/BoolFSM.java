@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - logicky
+ */
 public class BoolFSM extends FiniteStateMachine {
 
     @Override

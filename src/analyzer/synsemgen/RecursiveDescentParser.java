@@ -11,29 +11,85 @@ import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Implementace rekurzivního sestupu pro analýzu a generování kódu
+ */
 public class RecursiveDescentParser {
 
+    /**
+     * Pozice v paměti
+     */
     private int position = 3;
+
+    /**
+     * Aktuální úroveň
+     */
     private int curLevel = 0;
+
+    /**
+     * Číslo řádku
+     */
     private int number = 0;
+
+    /**
+     * Číslo začátku těla
+     */
     private int bodyNumber = 0;
 
+    /**
+     * Počet parametrů
+     */
     private int numberOfParameters = 0;
 
-    private boolean isInWhile = false;
-    private boolean isBreak = false;
-    private int breakPos = 0;
+    /**
+     * Počet vnořených cyklů
+     */
+    private int numberOfNestedLoops = 0;
 
+    /**
+     * Pozice příkazů zastav
+     */
+    private Stack<List<Integer>> breakPositions = new Stack<>();
+
+    /**
+     * Iterátor tokenů
+     */
     private Iterator<Token> iterator;
+
+    /**
+     * Symbol
+     */
     private String symbol;
+
+    /**
+     * Token
+     */
     private Token token;
+
+    /**
+     * Zásobník tabulek symbolů
+     */
     private Stack<SymbolTable> symbolTables;
 
+    /**
+     * Informace, zda nedošlo k syntaktické chybě
+     */
     private boolean isSyntaxError = false;
+
+    /**
+     * Informace, zda nedošlo k sémantické chybě
+     */
     private boolean isSemanticError = false;
 
+    /**
+     * Zapisovač do souboru
+     */
     private BufferedWriter writer;
 
+    /**
+     * Vytvoří a inicializuje parser
+     * @param tokens seznam tokenů
+     */
     protected RecursiveDescentParser(List<Token> tokens) {
         iterator = tokens.iterator();
         symbolTables = new Stack<>();
@@ -44,23 +100,29 @@ public class RecursiveDescentParser {
         }
     }
 
+    /**
+     * Načte další symbol
+     */
     private void getNextSymbol() {
-        if(iterator.hasNext()) {
+        if (iterator.hasNext()) {
             token = iterator.next();
             symbol = token.getName();
-        }
-        else {
+        } else {
             symbol = "end";
         }
 
     }
 
+    /**
+     * Ověří symbol
+     * @param symbol symbol
+     * @param with očekávaná hodnota
+     */
     private void verify(String symbol, String with) {
-        if(symbol.equals(with)) {
+        if (symbol.equals(with)) {
             getNextSymbol();
-        }
-        else {
-            if(!symbol.equals("end")) {
+        } else {
+            if (!symbol.equals("end")) {
                 System.out.println("Error: expected \"" + with + "\", was \"" + symbol + "\"");
             }
             getNextSymbol();
@@ -68,6 +130,14 @@ public class RecursiveDescentParser {
         }
     }
 
+    //############################GRAMMAR-RULES##############################
+    //#####################METODY-REKURZIVNIHO-SESTUPU#######################
+    //############################JEDEN-PRUCHOD##############################
+
+    /**
+     * Vstupní bod
+     * @return informace, zda nedošlo k chybě
+     */
     protected boolean program() {
         symbolTables.push(new SymbolTable());
 
@@ -105,11 +175,11 @@ public class RecursiveDescentParser {
 
     private void globPromenne() {
         SymbolTable symbolTable = symbolTables.peek();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(!symbol.equals("procedura") && !symbol.equals("funkce")) {
-            if(!isSyntaxError && !isSemanticError) {
+        if (!symbol.equals("procedura") && !symbol.equals("funkce")) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   INT   0   1");
                     writer.newLine();
@@ -119,30 +189,28 @@ public class RecursiveDescentParser {
                 }
             }
             boolean isConst = modifikator();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             String type = typ();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
 
-            if(type != null && type.equals("cislo")) {
+            if (type != null && type.equals("cislo")) {
                 matVyraz();
-            }
-            else if(type != null && type.equals("logicky")) {
+            } else if (type != null && type.equals("logicky")) {
                 logVyraz();
-            }
-            else {
+            } else {
                 System.out.println("Syntax error: No type defined");
                 matVyraz();
             }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 symbolTable.getEntries().add(new SymbolTableEntry(position, 0, name, type, isConst, "var", null));
                 try {
                     writer.write(number + "   STO   0   " + position);
@@ -159,12 +227,12 @@ public class RecursiveDescentParser {
 
     private void lokPromenne() {
         SymbolTable symbolTable = symbolTables.peek();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(!symbol.equals("pokud") && !symbol.equals("pro") && !symbol.equals("zatimco") &&
+        if (!symbol.equals("pokud") && !symbol.equals("pro") && !symbol.equals("zatimco") &&
                 !symbol.equals("IDENTIFIKATOR") && !symbol.equals("vrat") && !symbol.equals("zastav")) {
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   INT   0   1");
                     writer.newLine();
@@ -174,29 +242,27 @@ public class RecursiveDescentParser {
                 }
             }
             boolean isConst = modifikator();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             String type = typ();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             verify(symbol, "=");
-            if(type != null && type.equals("cislo")) {
+            if (type != null && type.equals("cislo")) {
                 matVyraz();
-            }
-            else if(type != null && type.equals("logicky")) {
+            } else if (type != null && type.equals("logicky")) {
                 logVyraz();
-            }
-            else {
+            } else {
                 System.out.println("Syntax error: No type defined");
                 matVyraz();
             }
             verify(symbol, ";");
             checkIfExistsInScope(symbolTable.getEntries(), name, "var");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 symbolTable.getEntries().add(new SymbolTableEntry(position, 1, name, type, isConst,
                         "var", null));
                 try {
@@ -213,10 +279,10 @@ public class RecursiveDescentParser {
     }
 
     private boolean modifikator() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return false;
         }
-        if(symbol.equals("konst")) {
+        if (symbol.equals("konst")) {
             verify(symbol, "konst");
 
             return true;
@@ -230,12 +296,12 @@ public class RecursiveDescentParser {
         int funProcStart = number;
         numberOfParameters = 0;
         position = 3;
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(symbol.equals("funkce")) {
+        if (symbol.equals("funkce")) {
             verify(symbol, "funkce");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   INT   0   3");
                     writer.newLine();
@@ -245,7 +311,7 @@ public class RecursiveDescentParser {
                 }
             }
             String type = typ();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             String name = token.getValue();
@@ -254,7 +320,7 @@ public class RecursiveDescentParser {
             List<SymbolTableEntry> parameters = new ArrayList<>();
             parametry(parameters);
             numberOfParameters = parameters.size();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             verify(symbol, ")");
@@ -265,12 +331,12 @@ public class RecursiveDescentParser {
             parameters.forEach(entry -> symbolTables.peek().getEntries().add(entry));
 
             checkIfExistsInScope(symbolTable.getEntries(), name, "func");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 symbolTable.getEntries().add(new SymbolTableEntry(funProcStart, 0, name, type, false, "func", parameters));
             }
 
-            if(!isSyntaxError && !isSemanticError) {
-                for(int i = parameters.size(); i > 0; i--) {
+            if (!isSyntaxError && !isSemanticError) {
+                for (int i = parameters.size(); i > 0; i--) {
                     try {
                         writer.write(number + "   LOD   0   -" + i);
                         writer.newLine();
@@ -287,15 +353,14 @@ public class RecursiveDescentParser {
 
             vnitrekFunkce(type);
             symbolTables.pop();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             verify(symbol, "}");
             funkceProcedury();
-        }
-        else if(symbol.equals("procedura")) {
+        } else if (symbol.equals("procedura")) {
             verify(symbol, "procedura");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   INT   0   3");
                     writer.newLine();
@@ -309,7 +374,7 @@ public class RecursiveDescentParser {
             verify(symbol, "(");
             List<SymbolTableEntry> parameters = new ArrayList<>();
             parametry(parameters);
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             verify(symbol, ")");
@@ -320,12 +385,12 @@ public class RecursiveDescentParser {
             parameters.forEach(entry -> symbolTables.peek().getEntries().add(entry));
 
             checkIfExistsInScope(symbolTable.getEntries(), name, "proc");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 symbolTable.getEntries().add(new SymbolTableEntry(funProcStart, 0, name, "", false, "proc", parameters));
             }
 
-            if(!isSyntaxError && !isSemanticError) {
-                for(int i = parameters.size(); i > 0; i--) {
+            if (!isSyntaxError && !isSemanticError) {
+                for (int i = parameters.size(); i > 0; i--) {
                     try {
                         writer.write(number + "   LOD   0   -" + i);
                         writer.newLine();
@@ -348,17 +413,17 @@ public class RecursiveDescentParser {
     }
 
     private void parametry(List<SymbolTableEntry> parameters) {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         String type = typ();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(symbol.equals(")")) {
+        if (symbol.equals(")")) {
             return;
         }
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             try {
                 writer.write(number + "   INT   0   1");
                 writer.newLine();
@@ -369,30 +434,30 @@ public class RecursiveDescentParser {
         }
         String name = token.getValue();
         verify(symbol, "IDENTIFIKATOR");
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             parameters.add(new SymbolTableEntry(position, 1, name, type, false, "var", null));
             position++;
         }
-        if(symbol.equals(",")) {
+        if (symbol.equals(",")) {
             verify(symbol, ",");
             parametry(parameters);
         }
     }
 
     private void vnitrekFunkce(String typeOut) {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         lokPromenne();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         viceAkci();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         vracHodnoty(typeOut);
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             try {
                 writer.write(number + "   RET   0   0");
                 writer.newLine();
@@ -404,15 +469,15 @@ public class RecursiveDescentParser {
     }
 
     private void vnitrekProcedury() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         lokPromenne();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         viceAkci();
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             try {
                 writer.write(number + "   RET   0   0");
                 writer.newLine();
@@ -424,13 +489,13 @@ public class RecursiveDescentParser {
     }
 
     private void viceAkci() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         switch (symbol) {
             case "pokud":
                 rozhodnuti();
-                if(symbol.equals("end")) {
+                if (symbol.equals("end")) {
                     return;
                 }
                 viceAkci();
@@ -438,27 +503,25 @@ public class RecursiveDescentParser {
             case "IDENTIFIKATOR":
                 String name = token.getValue();
                 verify(symbol, "IDENTIFIKATOR");
-                if(symbol.equals("(")) {
+                if (symbol.equals("(")) {
                     volaniFunkce(name);
-                }
-                else {
+                } else {
                     SymbolTableEntry entry = findVar(name);
                     String type = "";
-                    if(entry != null) {
+                    if (entry != null) {
                         type = entry.getType();
                     }
-                    if(entry != null && entry.isConst()) {
+                    if (entry != null && entry.isConst()) {
                         isSemanticError = true;
                         System.out.println("Semantic error: variable is a constant!");
                     }
                     verify(symbol, "=");
-                    if(type.equals("logicky")) {
+                    if (type.equals("logicky")) {
                         logVyraz();
-                    }
-                    else {
+                    } else {
                         matVyraz();
                     }
-                    if(!isSyntaxError && !isSemanticError && entry != null) {
+                    if (!isSyntaxError && !isSemanticError && entry != null) {
                         try {
                             writer.write(number + "   STO   " + (curLevel - entry.getLevel()) + "   " +
                                     entry.getPosition());
@@ -475,14 +538,14 @@ public class RecursiveDescentParser {
             case "zatimco":
             case "pro":
                 cyklus();
-                if(symbol.equals("end")) {
+                if (symbol.equals("end")) {
                     return;
                 }
                 viceAkci();
                 break;
             case "zastav":
                 zastaveni();
-                if(symbol.equals("end")) {
+                if (symbol.equals("end")) {
                     return;
                 }
                 viceAkci();
@@ -491,13 +554,13 @@ public class RecursiveDescentParser {
     }
 
     private void rozhodnuti() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         verify(symbol, "pokud");
         verify(symbol, "(");
         slozPodm();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         int currNumber = number;
@@ -505,13 +568,13 @@ public class RecursiveDescentParser {
         verify(symbol, ")");
         verify(symbol, "{");
         viceAkci();
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         int endIFNumber = number;
         number++;
         verify(symbol, "}");
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             try {
                 writer.write(currNumber + "   JMC   0   " + number);
                 writer.newLine();
@@ -520,17 +583,17 @@ public class RecursiveDescentParser {
             }
         }
 
-        if(symbol.equals("pokudne")) {
+        if (symbol.equals("pokudne")) {
             verify(symbol, "pokudne");
             verify(symbol, "{");
             viceAkci();
-            if(symbol.equals("end")) {
+            if (symbol.equals("end")) {
                 return;
             }
             verify(symbol, "}");
         }
 
-        if(!isSyntaxError && !isSemanticError) {
+        if (!isSyntaxError && !isSemanticError) {
             try {
                 writer.write(endIFNumber + "   JMP   0   " + number);
                 writer.newLine();
@@ -541,11 +604,12 @@ public class RecursiveDescentParser {
     }
 
     private void cyklus() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         if (symbol.equals("zatimco")) {
-            isInWhile = true;
+            numberOfNestedLoops++;
+            breakPositions.push(new ArrayList<>());
             verify(symbol, "zatimco");
             verify(symbol, "(");
             int startNumber = number;
@@ -562,14 +626,16 @@ public class RecursiveDescentParser {
                 return;
             }
             verify(symbol, "}");
-            isInWhile = false;
+            numberOfNestedLoops--;
             if (!isSyntaxError && !isSemanticError) {
                 try {
-                    if(isBreak) {
-                        writer.write(breakPos + "   JMP   0   " + (number + 1));
-                        writer.newLine();
-                        breakPos = 0;
-                        isBreak = false;
+                    List<Integer> breakPos = breakPositions.pop();
+                    if (breakPos.size() > 0) {
+                        for(Integer i : breakPos) {
+                            writer.write(i + "   JMP   0   " + (number + 1));
+                            writer.newLine();
+                        }
+
                     }
                     writer.write(currNumber + "   JMC   0   " + (number + 1));
                     writer.newLine();
@@ -584,15 +650,15 @@ public class RecursiveDescentParser {
     }
 
     private void volaniFunkce(String name) {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         SymbolTableEntry entry = findFunction(name);
         List<SymbolTableEntry> parameters = null;
-        if(entry != null) {
+        if (entry != null) {
             parameters = entry.getParameters();
         }
-        if(!isSyntaxError && !isSemanticError && entry != null && entry.getElementType().equals("func")) {
+        if (!isSyntaxError && !isSemanticError && entry != null && entry.getElementType().equals("func")) {
             try {
                 writer.write(number + "   INT   0   1");
                 writer.newLine();
@@ -602,20 +668,25 @@ public class RecursiveDescentParser {
             }
         }
         verify(symbol, "(");
-        if(!symbol.equals(")")) {
-            vstupHodnoty(parameters, 0);
-            if(symbol.equals("end")) {
-                return;
-            }
+        int index = 0;
+        index = vstupHodnoty(parameters, index);
+        if (parameters != null && index < parameters.size()) {
+            isSemanticError = true;
+            System.out.println("Semantic error: not enough parameters. Expected: \"" + parameters.size() + "\"");
+        }
+        if (symbol.equals("end")) {
+            return;
         }
         verify(symbol, ")");
-        if(!isSyntaxError && !isSemanticError && entry != null) {
+        if (!isSyntaxError && !isSemanticError && entry != null) {
             try {
                 writer.write(number + "   CAL   " + (curLevel - entry.getLevel()) + "   " +
                         entry.getPosition());
                 writer.newLine();
                 number++;
-                writer.write(number + "   INT   0   -" + parameters.size());
+                if (parameters != null) {
+                    writer.write(number + "   INT   0   -" + parameters.size());
+                }
                 writer.newLine();
                 number++;
             } catch (IOException e) {
@@ -624,21 +695,125 @@ public class RecursiveDescentParser {
         }
     }
 
-    private void vstupHodnoty(List<SymbolTableEntry> parameters, int index) {
-        if(symbol.equals("end")) {
-            return;
+    private int vstupHodnoty(List<SymbolTableEntry> parameters, int index) {
+        if (symbol.equals("end")) {
+            return index;
         }
-        if(symbol.equals("IDENTIFIKATOR")) {
+        if (parameters != null && index > parameters.size()) {
+            isSemanticError = true;
+            System.out.println("Semantic error: too many parameters. Expected: \"" + parameters.size() + "\"");
+            return index;
+        }
+        if (symbol.equals("IDENTIFIKATOR")) {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError && parameters != null) {
                 checkIfIsUsableForOps(name, parameters.get(index).getType());
             }
             SymbolTableEntry entry = findVar(name);
-            if(!isSyntaxError && !isSemanticError && entry != null) {
+            if (!isSyntaxError && !isSemanticError && entry != null) {
                 try {
                     writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
                             entry.getPosition());
+                    writer.newLine();
+                    number++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            index++;
+        } else if (symbol.equals("hodnota")){
+            String value = token.getValue();
+            String type;
+            verify(symbol, "hodnota");
+            if (value.matches("\\d+") || value.matches("0")) {
+                type = "cislo";
+            } else {
+                type = "logicky";
+            }
+            if (parameters != null && !isSyntaxError && !isSemanticError &&
+                    !type.equals(parameters.get(index).getType())) {
+                isSemanticError = true;
+                System.out.println("Semantic error: wrong type of parameter! Expected: \"" +
+                        type.equals(parameters.get(index).getType()) + "\"");
+            }
+            if (!isSyntaxError && !isSemanticError) {
+                try {
+                    if (type.equals("cislo")) {
+                        writer.write(number + "   LIT   0   " + value);
+                    } else {
+                        writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
+                    }
+                    writer.newLine();
+                    number++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            index++;
+        }
+        else {
+            if(!symbol.equals(")")) {
+                verify(symbol, "value or IDENTIFIER");
+            }
+        }
+
+        if (symbol.equals(",")) {
+            verify(symbol, ",");
+            index = vstupHodnoty(parameters, index);
+        }
+
+        return index;
+    }
+
+    private void vracHodnoty(String typeOut) {
+        if (symbol.equals("end")) {
+            return;
+        }
+        verify(symbol, "vrat");
+        if (symbol.equals("IDENTIFIKATOR")) {
+            String name = token.getValue();
+            verify(symbol, "IDENTIFIKATOR");
+            if (!isSyntaxError && !isSemanticError) {
+                checkIfIsUsableForOps(name, typeOut);
+            }
+            SymbolTableEntry entry = findVar(name);
+            if (!isSyntaxError && !isSemanticError && entry != null) {
+                try {
+                    writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
+                            entry.getPosition());
+                    writer.newLine();
+                    number++;
+                    writer.write(number + "   STO   0   -" + (numberOfParameters + 1));
+                    writer.newLine();
+                    number++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (symbol.equals("hodnota")) {
+            String value = token.getValue();
+            String type;
+            verify(symbol, "hodnota");
+            if (value.matches("\\d+")) {
+                type = "cislo";
+            } else {
+                type = "logicky";
+            }
+            if (!isSyntaxError && !isSemanticError && !type.equals(typeOut)) {
+                isSemanticError = true;
+                System.out.println("Semantic error: wrong type of return value. Expected: \"" + typeOut + "\"");
+            }
+            if (!isSyntaxError && !isSemanticError) {
+                try {
+                    if (type.equals("logicky")) {
+                        writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
+                    } else {
+                        writer.write(number + "   LIT   0   " + value);
+                    }
+                    writer.newLine();
+                    number++;
+                    writer.write(number + "   STO   0   -" + (numberOfParameters + 1));
                     writer.newLine();
                     number++;
                 } catch (IOException e) {
@@ -647,125 +822,28 @@ public class RecursiveDescentParser {
             }
         }
         else {
-            String value = token.getValue();
-            String type;
-            verify(symbol, "hodnota");
-            if(value.matches("\\d+") || value.matches("0")) {
-                type = "cislo";
-            }
-            else {
-                type = "logicky";
-            }
-            if(!isSyntaxError && !isSemanticError && !type.equals(parameters.get(index).getType())) {
-                isSemanticError = true;
-                System.out.println("Semantic error: wrong type of parameter! Expected: \"" +
-                        type.equals(parameters.get(index).getType()) + "\"");
-            }
-            if(!isSyntaxError && !isSemanticError) {
-                try {
-                    if(type.equals("cislo")) {
-                        writer.write(number + "   LIT   0   " + value);
-                    }
-                    else {
-                        writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
-                    }
-                    writer.newLine();
-                    number++;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        if(symbol.equals(",")) {
-            verify(symbol, ",");
-            index++;
-            vstupHodnoty(parameters, index);
-        }
-        if(parameters != null && index != parameters.size() - 1) {
-            isSemanticError = true;
-            System.out.println("Semantic error: not enough parameters. Expected: \"" + parameters.size() + "\"");
-        }
-    }
-
-    private void vracHodnoty(String typeOut) {
-        if(symbol.equals("end")) {
-            return;
-        }
-        verify(symbol, "vrat");
-        if(symbol.equals("IDENTIFIKATOR")) {
-            String name = token.getValue();
-            verify(symbol, "IDENTIFIKATOR");
-            if(!isSyntaxError && !isSemanticError) {
-                checkIfIsUsableForOps(name, typeOut);
-            }
-            SymbolTableEntry entry = findVar(name);
-            if(!isSyntaxError && !isSemanticError && entry != null) {
-                try {
-                    writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
-                            entry.getPosition());
-                    writer.newLine();
-                    number++;
-                    writer.write(number + "   STO   0   -" + (numberOfParameters + 1));
-                    writer.newLine();
-                    number++;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        else if(symbol.equals("hodnota")) {
-            String value = token.getValue();
-            String type;
-            verify(symbol, "hodnota");
-            if(value.matches("\\d+")) {
-                type = "cislo";
-            }
-            else {
-                type = "logicky";
-            }
-            if(!isSyntaxError && !isSemanticError && !type.equals(typeOut)) {
-                isSemanticError = true;
-                System.out.println("Semantic error: wrong type of return value. Expected: \"" + typeOut + "\"");
-            }
-            if(!isSyntaxError && !isSemanticError) {
-                try {
-                    if(type.equals("logicky")) {
-                        writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
-                    }
-                    else {
-                        writer.write(number + "   LIT   0   " + value);
-                    }
-                    writer.newLine();
-                    number++;
-                    writer.write(number + "   STO   0   -" + (numberOfParameters + 1));
-                    writer.newLine();
-                    number++;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            verify(symbol, "value or variable IDENTIFIER");
         }
         verify(symbol, ";");
     }
 
     private void zastaveni() {
-        if(!isInWhile) {
+        if (numberOfNestedLoops == 0) {
             isSemanticError = true;
             System.out.println("Semantic error: \"zastav\" not in a loop");
             return;
         }
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
         verify(symbol, "zastav");
         verify(symbol, ";");
-        isBreak = true;
-        breakPos = number;
+        breakPositions.peek().add(number);
         number++;
     }
 
     private String typ() {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return null;
         }
         switch (symbol) {
@@ -780,14 +858,14 @@ public class RecursiveDescentParser {
     }
 
     private String podmOperator(String type) {
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return null;
         }
         String op = symbol;
         switch (symbol) {
             case ">":
                 verify(symbol, ">");
-                if(type.equals("logicky")) {
+                if (type.equals("logicky")) {
                     System.out.println("Semantic error: cannot use \">\" for logical operations!");
                     isSemanticError = true;
                     op = null;
@@ -795,7 +873,7 @@ public class RecursiveDescentParser {
                 break;
             case "<":
                 verify(symbol, "<");
-                if(type.equals("logicky")) {
+                if (type.equals("logicky")) {
                     System.out.println("Semantic error: cannot use \"<\" for logical operations!");
                     isSemanticError = true;
                     op = null;
@@ -803,7 +881,7 @@ public class RecursiveDescentParser {
                 break;
             case "<=":
                 verify(symbol, "<=");
-                if(type.equals("logicky")) {
+                if (type.equals("logicky")) {
                     System.out.println("Semantic error: cannot use \"<=\" for logical operations!");
                     isSemanticError = true;
                     op = null;
@@ -811,7 +889,7 @@ public class RecursiveDescentParser {
                 break;
             case ">=":
                 verify(symbol, ">=");
-                if(type.equals("logicky")) {
+                if (type.equals("logicky")) {
                     System.out.println("Semantic error: cannot use \">=\" for logical operations!");
                     isSemanticError = true;
                     op = null;
@@ -832,14 +910,14 @@ public class RecursiveDescentParser {
     }
 
     private void logVyraz() {
-        if(symbol.equals("hodnota")) {
+        if (symbol.equals("hodnota")) {
             String value = token.getValue();
             verify(symbol, "hodnota");
-            if(!value.equals("pravda") && !value.equals("nepravda")) {
+            if (!value.equals("pravda") && !value.equals("nepravda")) {
                 isSemanticError = true;
                 System.out.println("Semantic error: cannot use type \"cislo\" for logical operations!");
             }
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
                     writer.newLine();
@@ -848,19 +926,17 @@ public class RecursiveDescentParser {
                     e.printStackTrace();
                 }
             }
-        }
-        else if(symbol.equals("IDENTIFIKATOR")) {
+        } else if (symbol.equals("IDENTIFIKATOR")) {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 checkIfIsUsableForOps(name, "logicky");
             }
-            if(symbol.equals("(")) {
+            if (symbol.equals("(")) {
                 volaniFunkce(name);
-            }
-            else {
+            } else {
                 SymbolTableEntry entry = findVar(name);
-                if(!isSyntaxError && !isSemanticError && entry != null) {
+                if (!isSyntaxError && !isSemanticError && entry != null) {
                     try {
                         writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
                                 entry.getPosition());
@@ -871,9 +947,8 @@ public class RecursiveDescentParser {
                     }
                 }
             }
-        }
-        else {
-            if(!symbol.equals("end")) {
+        } else {
+            if (!symbol.equals("end")) {
                 System.out.println("Error: expected \"value\" or \"function call\", was \"" + symbol + "\"");
                 getNextSymbol();
             }
@@ -884,7 +959,7 @@ public class RecursiveDescentParser {
     private void matVyraz() {
         term();
         String val = matVyraz2();
-        if(!isSyntaxError && !isSemanticError && val != null) {
+        if (!isSyntaxError && !isSemanticError && val != null) {
             try {
                 writer.write(number + "   OPR   0   " + (val.equals("+") ? "2" : "3"));
                 writer.newLine();
@@ -897,18 +972,16 @@ public class RecursiveDescentParser {
 
     private String matVyraz2() {
         String val = symbol;
-        if(symbol.equals("+")) {
+        if (symbol.equals("+")) {
             verify(symbol, "+");
-        }
-        else if(symbol.equals("-")) {
+        } else if (symbol.equals("-")) {
             verify(symbol, "-");
-        }
-        else {
+        } else {
             return null;
         }
         term();
         String val2 = matVyraz2();
-        if(!isSyntaxError && !isSemanticError && val2 != null) {
+        if (!isSyntaxError && !isSemanticError && val2 != null) {
             try {
                 writer.write(number + "   OPR   0   " + (val2.equals("+") ? "2" : "3"));
                 writer.newLine();
@@ -924,7 +997,7 @@ public class RecursiveDescentParser {
     private void term() {
         faktor();
         String val = term2();
-        if(!isSyntaxError && !isSemanticError && val != null) {
+        if (!isSyntaxError && !isSemanticError && val != null) {
             try {
                 writer.write(number + "   OPR   0   " + (val.equals("*") ? "4" : "5"));
                 writer.newLine();
@@ -937,18 +1010,16 @@ public class RecursiveDescentParser {
 
     private String term2() {
         String val = symbol;
-        if(symbol.equals("*")) {
+        if (symbol.equals("*")) {
             verify(symbol, "*");
-        }
-        else if(symbol.equals("/")) {
+        } else if (symbol.equals("/")) {
             verify(symbol, "/");
-        }
-        else {
+        } else {
             return null;
         }
         faktor();
         String val2 = term2();
-        if(!isSyntaxError && !isSemanticError && val2 != null) {
+        if (!isSyntaxError && !isSemanticError && val2 != null) {
             try {
                 writer.write(number + "   OPR   0   " + (val2.equals("*") ? "4" : "5"));
                 writer.newLine();
@@ -971,15 +1042,14 @@ public class RecursiveDescentParser {
             case "IDENTIFIKATOR":
                 String name = token.getValue();
                 verify(symbol, "IDENTIFIKATOR");
-                if(!isSyntaxError && !isSemanticError) {
+                if (!isSyntaxError && !isSemanticError) {
                     checkIfIsUsableForOps(name, "cislo");
                 }
-                if(symbol.equals("(")) {
+                if (symbol.equals("(")) {
                     volaniFunkce(name);
-                }
-                else {
+                } else {
                     SymbolTableEntry entry = findVar(name);
-                    if(!isSyntaxError && !isSemanticError && entry != null) {
+                    if (!isSyntaxError && !isSemanticError && entry != null) {
                         try {
                             writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
                                     entry.getPosition());
@@ -994,11 +1064,11 @@ public class RecursiveDescentParser {
             case "hodnota":
                 String value = token.getValue();
                 verify(symbol, "hodnota");
-                if(!isSyntaxError && !isSemanticError && !value.matches("-?\\d+") && !value.matches("0")) {
+                if (!isSyntaxError && !isSemanticError && !value.matches("-?\\d+") && !value.matches("0")) {
                     isSemanticError = true;
                     System.out.println("Semantic error: cannot use \"logicky\" for numeric operations!");
                 }
-                if(!isSyntaxError && !isSemanticError) {
+                if (!isSyntaxError && !isSemanticError) {
                     try {
                         writer.write(number + "   LIT   0   " + Integer.parseInt(value));
                         writer.newLine();
@@ -1021,7 +1091,7 @@ public class RecursiveDescentParser {
     private void slozPodm() {
         podmTerm();
         String val = slozPodm2();
-        if(!isSyntaxError && !isSemanticError && val != null) {
+        if (!isSyntaxError && !isSemanticError && val != null) {
             try {
                 writer.write(number + "   OPR   0   2");
                 writer.newLine();
@@ -1034,15 +1104,14 @@ public class RecursiveDescentParser {
 
     private String slozPodm2() {
         String val = symbol;
-        if(symbol.equals("||")) {
+        if (symbol.equals("||")) {
             verify(symbol, "||");
-        }
-        else {
+        } else {
             return null;
         }
         podmTerm();
         String val2 = slozPodm2();
-        if(!isSyntaxError && !isSemanticError && val2 != null) {
+        if (!isSyntaxError && !isSemanticError && val2 != null) {
             try {
                 writer.write(number + "   OPR   0   2");
                 writer.newLine();
@@ -1058,7 +1127,7 @@ public class RecursiveDescentParser {
     private void podmTerm() {
         podmFaktor();
         String val = podmTerm2();
-        if(!isSyntaxError && !isSemanticError && val != null) {
+        if (!isSyntaxError && !isSemanticError && val != null) {
             try {
                 writer.write(number + "   OPR   0   4");
                 writer.newLine();
@@ -1071,15 +1140,14 @@ public class RecursiveDescentParser {
 
     private String podmTerm2() {
         String val = symbol;
-        if(symbol.equals("&&")) {
+        if (symbol.equals("&&")) {
             verify(symbol, "&&");
-        }
-        else {
+        } else {
             return null;
         }
         podmFaktor();
         String val2 = term2();
-        if(!isSyntaxError && !isSemanticError && val2 != null) {
+        if (!isSyntaxError && !isSemanticError && val2 != null) {
             try {
                 writer.write(number + "   OPR   0   4");
                 writer.newLine();
@@ -1095,18 +1163,17 @@ public class RecursiveDescentParser {
     private void podmFaktor() {
         String typeL = "";
         String typeR = "";
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(symbol.equals("(")) {
+        if (symbol.equals("(")) {
             verify(symbol, "(");
             slozPodm();
             verify(symbol, ")");
             return;
-        }
-        else if(symbol.equals("!")) {
+        } else if (symbol.equals("!")) {
             verify(symbol, "!");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   LIT   0   1");
                     writer.newLine();
@@ -1118,7 +1185,7 @@ public class RecursiveDescentParser {
             verify(symbol, "(");
             podmFaktor();
             verify(symbol, ")");
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
                     writer.write(number + "   OPR   0   3");
                     writer.newLine();
@@ -1129,14 +1196,14 @@ public class RecursiveDescentParser {
             }
             return;
         }
-        if(symbol.equals("IDENTIFIKATOR")) {
+        if (symbol.equals("IDENTIFIKATOR")) {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             SymbolTableEntry entry = findIdent(name);
-            if(entry != null) {
+            if (entry != null) {
                 typeL = entry.getType();
             }
-            if(!isSyntaxError && !isSemanticError && entry != null) {
+            if (!isSyntaxError && !isSemanticError && entry != null) {
                 try {
                     writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
                             entry.getPosition());
@@ -1146,23 +1213,20 @@ public class RecursiveDescentParser {
                     e.printStackTrace();
                 }
             }
-        }
-        else if(symbol.equals("hodnota")) {
+        } else if (symbol.equals("hodnota")) {
             String value = token.getValue();
             verify(symbol, "hodnota");
-            if(value.matches("-?\\d+") || !value.matches("0")) {
+            if (value.matches("-?\\d+") || !value.matches("0")) {
                 typeL = "cislo";
-            }
-            else {
+            } else {
                 typeL = "logicky";
             }
 
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
-                    if(typeL.equals("cislo")) {
+                    if (typeL.equals("cislo")) {
                         writer.write(number + "   LIT   0   " + value);
-                    }
-                    else {
+                    } else {
                         writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
                     }
                     writer.newLine();
@@ -1171,23 +1235,22 @@ public class RecursiveDescentParser {
                     e.printStackTrace();
                 }
             }
-        }
-        else {
-            verify(symbol, "value or IDENTIFICATION");
+        } else {
+            verify(symbol, "value or IDENTIFIER");
         }
 
         String op = podmOperator(typeL);
-        if(symbol.equals("end")) {
+        if (symbol.equals("end")) {
             return;
         }
-        if(symbol.equals("IDENTIFIKATOR")) {
+        if (symbol.equals("IDENTIFIKATOR")) {
             String name = token.getValue();
             verify(symbol, "IDENTIFIKATOR");
             SymbolTableEntry entry = findIdent(name);
-            if(entry != null) {
+            if (entry != null) {
                 typeR = entry.getType();
             }
-            if(!isSyntaxError && !isSemanticError && entry != null) {
+            if (!isSyntaxError && !isSemanticError && entry != null) {
                 try {
                     writer.write(number + "   LOD   " + (curLevel - entry.getLevel()) + "   " +
                             entry.getPosition());
@@ -1197,23 +1260,20 @@ public class RecursiveDescentParser {
                     e.printStackTrace();
                 }
             }
-        }
-        else if(symbol.equals("hodnota")) {
+        } else if (symbol.equals("hodnota")) {
             String value = token.getValue();
             verify(symbol, "hodnota");
-            if(value.matches("\\d+") || value.matches("0")) {
+            if (value.matches("\\d+") || value.matches("0")) {
                 typeR = "cislo";
-            }
-            else {
+            } else {
                 typeR = "logicky";
             }
 
-            if(!isSyntaxError && !isSemanticError) {
+            if (!isSyntaxError && !isSemanticError) {
                 try {
-                    if(typeR.equals("cislo")) {
+                    if (typeR.equals("cislo")) {
                         writer.write(number + "   LIT   0   " + value);
-                    }
-                    else {
+                    } else {
                         writer.write(number + "   LIT   0   " + (value.equals("pravda") ? "1" : "0"));
                     }
                     writer.newLine();
@@ -1222,17 +1282,16 @@ public class RecursiveDescentParser {
                     e.printStackTrace();
                 }
             }
-        }
-        else {
-            verify(symbol, "value or IDENTIFICATION");
+        } else {
+            verify(symbol, "value or IDENTIFIER");
         }
 
-        if(!typeL.equals(typeR)) {
+        if (!typeL.equals(typeR)) {
             isSemanticError = true;
             System.out.println("Semantic error: cannot compare two different types!");
         }
 
-        if(!isSyntaxError && !isSemanticError && op != null) {
+        if (!isSyntaxError && !isSemanticError && op != null) {
             int opNum = 0;
             try {
                 switch (op) {
@@ -1275,7 +1334,7 @@ public class RecursiveDescentParser {
             isSemanticError = true;
             System.out.println("Semantic error: procedure with no parameters has to be called to start the program!");
         }
-        if(!isSyntaxError && !isSemanticError && entry != null) {
+        if (!isSyntaxError && !isSemanticError && entry != null) {
             try {
                 writer.write(bodyNumber + "   CAL   0   " + entry.getPosition());
                 writer.newLine();
@@ -1290,9 +1349,15 @@ public class RecursiveDescentParser {
 
     //############################SEMANTIC##############################
 
+    /**
+     * Zkotroluje, zda záznam existuje v scopu
+     * @param entries záznamy
+     * @param name jméno
+     * @param elementType typ záznamu
+     */
     private void checkIfExistsInScope(List<SymbolTableEntry> entries, String name, String elementType) {
         entries.forEach(entry -> {
-            if(entry.getElementType().equals(elementType) && entry.getName().equals(name)) {
+            if (entry.getElementType().equals(elementType) && entry.getName().equals(name)) {
                 isSemanticError = true;
                 System.out.println("Element \"" + elementType + "\" name: \"" + name + "\" already defined in the" +
                         " scope!");
@@ -1300,6 +1365,11 @@ public class RecursiveDescentParser {
         });
     }
 
+    /**
+     * Zkotroluje, zda je záznam použitelný pro operace
+     * @param name jméno
+     * @param type datový typ
+     */
     private void checkIfIsUsableForOps(String name, String type) {
         AtomicBoolean isFound = new AtomicBoolean(false);
         AtomicBoolean isSuitable = new AtomicBoolean(false);
@@ -1307,27 +1377,34 @@ public class RecursiveDescentParser {
 
         checkAllEntries(name, type, isFound, isSuitable, symbolTable);
 
-        if(!isFound.get() && !isSuitable.get() && symbolTables.size() > 1) {
+        if (!isFound.get() && !isSuitable.get() && symbolTables.size() > 1) {
             symbolTable = symbolTables.firstElement();
             checkAllEntries(name, type, isFound, isSuitable, symbolTable);
         }
 
-        if(isFound.get() && !isSuitable.get()) {
+        if (isFound.get() && !isSuitable.get()) {
             isSemanticError = true;
             System.out.println("Semantic error: IDENTIFICATION \"" + name + "\" has a wrong type of \"" +
                     type + "\"!");
-        }
-        else if(!isFound.get()) {
+        } else if (!isFound.get()) {
             isSemanticError = true;
             System.out.println("Semantic error: IDENTIFICATION \"" + name + "\" not found!");
         }
     }
 
+    /**
+     * Prohledá všechny záznamy ve scopu
+     * @param name jméno
+     * @param type datový typ
+     * @param isFound informace, zda byl nalezen
+     * @param isSuitable infromace, zda je vhodný
+     * @param symbolTable tabulka symbolů
+     */
     private void checkAllEntries(String name, String type, AtomicBoolean isFound, AtomicBoolean isSuitable,
                                  SymbolTable symbolTable) {
-        for(SymbolTableEntry entry : symbolTable.getEntries()) {
-            if(entry.getName().equals(name)) {
-                if(entry.getType().equals(type)) {
+        for (SymbolTableEntry entry : symbolTable.getEntries()) {
+            if (entry.getName().equals(name)) {
+                if (entry.getType().equals(type)) {
                     isSuitable.set(true);
                 }
                 isFound.set(true);
@@ -1335,11 +1412,16 @@ public class RecursiveDescentParser {
         }
     }
 
+    /**
+     * Najde funkci
+     * @param name jméno
+     * @return záznam s funkcí nebo null
+     */
     private SymbolTableEntry findFunction(String name) {
         SymbolTable symbolTable = symbolTables.firstElement();
-        for(SymbolTableEntry entry : symbolTable.getEntries()) {
-            if(entry.getName().equals(name)) {
-                if(entry.getElementType().equals("func") || entry.getElementType().equals("proc")) {
+        for (SymbolTableEntry entry : symbolTable.getEntries()) {
+            if (entry.getName().equals(name)) {
+                if (entry.getElementType().equals("func") || entry.getElementType().equals("proc")) {
                     return entry;
                 }
             }
@@ -1350,21 +1432,26 @@ public class RecursiveDescentParser {
         return null;
     }
 
+    /**
+     * Najde proměnnou
+     * @param name jméno
+     * @return záznam s proměnnou nebo null
+     */
     private SymbolTableEntry findVar(String name) {
         SymbolTable symbolTable = symbolTables.peek();
-        for(SymbolTableEntry entry : symbolTable.getEntries()) {
-            if(entry.getName().equals(name)) {
-                if(entry.getElementType().equals("var")) {
+        for (SymbolTableEntry entry : symbolTable.getEntries()) {
+            if (entry.getName().equals(name)) {
+                if (entry.getElementType().equals("var")) {
                     return entry;
                 }
             }
         }
 
-        if(symbolTables.size() > 1) {
+        if (symbolTables.size() > 1) {
             symbolTable = symbolTables.firstElement();
-            for(SymbolTableEntry entry : symbolTable.getEntries()) {
-                if(entry.getName().equals(name)) {
-                    if(entry.getElementType().equals("var")) {
+            for (SymbolTableEntry entry : symbolTable.getEntries()) {
+                if (entry.getName().equals(name)) {
+                    if (entry.getElementType().equals("var")) {
                         return entry;
                     }
                 }
@@ -1376,18 +1463,23 @@ public class RecursiveDescentParser {
         return null;
     }
 
+    /**
+     * Najde identifikátor
+     * @param name jméno
+     * @return záznam s identifikátorem nebo null
+     */
     private SymbolTableEntry findIdent(String name) {
         SymbolTable symbolTable = symbolTables.peek();
-        for(SymbolTableEntry entry : symbolTable.getEntries()) {
-            if(entry.getName().equals(name)) {
-               return entry;
+        for (SymbolTableEntry entry : symbolTable.getEntries()) {
+            if (entry.getName().equals(name)) {
+                return entry;
             }
         }
 
-        if(symbolTables.size() > 1) {
+        if (symbolTables.size() > 1) {
             symbolTable = symbolTables.firstElement();
-            for(SymbolTableEntry entry : symbolTable.getEntries()) {
-                if(entry.getName().equals(name)) {
+            for (SymbolTableEntry entry : symbolTable.getEntries()) {
+                if (entry.getName().equals(name)) {
                     return entry;
                 }
             }

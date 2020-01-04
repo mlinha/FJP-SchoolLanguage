@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - logické operátory
+ */
 public class LogOpFSM extends FiniteStateMachine {
 
     @Override

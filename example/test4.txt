@@ -1,0 +1,21 @@
+cislo a = 0;
+
+funkce cislo factorial(cislo n){
+    cislo a = 0;
+    cislo temp = 0;
+    pokud(n == 0) {
+        a = 1;
+    }
+    pokudne {
+        temp = n - 1;
+        a = (n * factorial(temp));
+    }
+
+    vrat a;
+}
+
+procedura start() {
+    a = factorial(4);
+}
+
+start();

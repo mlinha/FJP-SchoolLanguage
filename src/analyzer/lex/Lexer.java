@@ -9,15 +9,52 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Lexikální analyzátor
+ */
 public class Lexer {
 
+    /**
+     * Pozice FSM pro číselnou hodnotu
+     */
+    private final int INTVALPOS = 0;
+
+    /**
+     * Pozice FSM pro identifikátor
+     */
+    private final int IDENTPOS = 1;
+
+
+    /**
+     * List tokenů
+     */
     private List<Token> tokens = new ArrayList<>();
+
+    /**
+     * List automatů
+     */
     private List<FiniteStateMachine> finiteStateMachines = new ArrayList<>();
+
+    /**
+     * Pole znaků
+     */
     private char[] chars;
+
+    /**
+     * Informace o tom, zda se jedná o konec
+     */
     private boolean isEnd = false;
 
+    /**
+     * Provede lexikální analýzu
+     * @param fileName název souboru
+     * @return informace o tom, zda nastala chyba
+     */
     protected boolean lex(String fileName) {
-        openAndLoad(fileName);
+        if(!openAndLoad(fileName)) {
+            return true;
+        }
+
         initializeFSMList();
 
         boolean isError = false;
@@ -67,7 +104,7 @@ public class Lexer {
                 current++;
 
                 if(active.get() == 0 && finished.get() > 0) {
-                    if(!finiteStateMachines.get(19).isError() || !finiteStateMachines.get(20).isError()) {
+                    if(!finiteStateMachines.get(INTVALPOS).isError() || !finiteStateMachines.get(IDENTPOS).isError()) {
                         createToken(start, lastCorrect.get() - 1);
                     }
                     else {
@@ -91,12 +128,14 @@ public class Lexer {
         return isError;
     }
 
+    /**
+     * Provede inicializaci seznamu automatů
+     */
     private void initializeFSMList() {
+        finiteStateMachines.add(INTVALPOS, new IntValFSM()); // 1
+        finiteStateMachines.add(IDENTPOS, new IdentFSM()); // 2
         finiteStateMachines.add(new WhileFSM());
         finiteStateMachines.add(new ProcedureFSM());
-        finiteStateMachines.add(new CaseFSM());
-        finiteStateMachines.add(new ForFSM());
-        finiteStateMachines.add(new SwitchFSM());
         finiteStateMachines.add(new ReturnFSM());
         finiteStateMachines.add(new ColonFSM());
         finiteStateMachines.add(new ParenFSM());
@@ -111,13 +150,16 @@ public class Lexer {
         finiteStateMachines.add(new TrueFSM());
         finiteStateMachines.add(new FalseFSM());
         finiteStateMachines.add(new IntFSM());
-        finiteStateMachines.add(new IntValFSM()); // 19
-        finiteStateMachines.add(new IdentFSM()); // 20
         finiteStateMachines.add(new CommaFSM());
         finiteStateMachines.add(new LogOpFSM());
         finiteStateMachines.add(new NotFSM());
     }
 
+    /**
+     * Načte další znak
+     * @param current pozice
+     * @return znak
+     */
     private char nextChar(int current) {
         if(current >= chars.length) {
             isEnd = true;
@@ -128,6 +170,11 @@ public class Lexer {
         }
     }
 
+    /**
+     * Vytvoří token
+     * @param start start tokenu
+     * @param end konec tokenu
+     */
     private void createToken(int start, int end) {
         String value = new String(chars, start, end - start + 1).trim();
 
@@ -143,11 +190,15 @@ public class Lexer {
         }
 
         tokens.add(token);
-        // test
         System.out.println(token.getName());
     }
 
-    private void openAndLoad(String filename) {
+    /**
+     * Načte soubor
+     * @param filename název souboru
+     * @return informace, zda nedošlo k chybě
+     */
+    private boolean openAndLoad(String filename) {
         StringBuilder stringBuilder = new StringBuilder();
 
         try {
@@ -163,23 +214,33 @@ public class Lexer {
         catch(Exception e) {
             System.out.println("Error: file couldn't be loaded!");
             chars = new char[0];
+            return false;
         }
-
+        return true;
     }
 
+    /**
+     * Zkontroluje, zda je token identifikátor
+     * @param string token
+     * @return informace, zda je token identifikátor
+     */
     private boolean checkIfIsIdent(String string) {
-        return !string.equals("pravda") && !string.equals("nepravda") && !string.equals("zatimco") && !string.equals("pro") &&
+        return !string.equals("pravda") && !string.equals("nepravda") && !string.equals("zatimco") &&
                 !string.equals("{") && !string.equals("}") && !string.equals("(") && !string.equals(")") &&
                 !string.equals(";") && !string.equals(":") && !string.equals("logicky") && !string.equals("cislo") &&
-                !string.equals("pripad") && !string.equals("prepinac") && !string.equals("funkce") && !string.equals("+") &&
-                !string.equals("procedura") && !string.equals("*") && !string.equals("/") && !string.equals("-") &&
-                !string.equals("pokud") && !string.equals("pokudne") && !string.equals("<=") && !string.equals(">=") &&
-                !string.equals("!=") && !string.equals("==") && !string.equals("<") && !string.equals(">") &&
-                !string.equals("&&") && !string.equals("||") && !string.equals("zastav") && !string.equals("vrat") &&
-                !string.equals("konst") && !string.equals("=") && !string.equals(",") && !string.equals("!") &&
-                !string.matches("-?\\d+") && !string.matches("0");
+                !string.equals("funkce") && !string.equals("+") && !string.equals("procedura") && !string.equals("*") &&
+                !string.equals("/") && !string.equals("-") && !string.equals("pokud") && !string.equals("pokudne") &&
+                !string.equals("<=") && !string.equals(">=") && !string.equals("!=") && !string.equals("==") &&
+                !string.equals("<") && !string.equals(">") && !string.equals("&&") && !string.equals("||") &&
+                !string.equals("zastav") && !string.equals("vrat") && !string.equals("konst") && !string.equals("=") &&
+                !string.equals(",") && !string.equals("!") && !string.matches("-?\\d+") &&
+                !string.matches("0");
     }
 
+    /**
+     * Získá seznam tokenů
+     * @return seznam tokenů
+     */
     public List<Token> getTokens() {
         return tokens;
     }

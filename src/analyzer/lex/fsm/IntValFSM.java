@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro čislo
+ */
 public class IntValFSM extends FiniteStateMachine {
 
     @Override

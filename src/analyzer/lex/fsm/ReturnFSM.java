@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - vrat
+ */
 public class ReturnFSM extends FiniteStateMachine {
 
     @Override

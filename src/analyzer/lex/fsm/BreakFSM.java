@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - zastav
+ */
 public class BreakFSM extends FiniteStateMachine {
 
     @Override

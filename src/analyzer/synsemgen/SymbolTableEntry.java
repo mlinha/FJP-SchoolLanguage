@@ -3,16 +3,56 @@ package analyzer.synsemgen;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Záznam do tabulky symbolů
+ */
 public class SymbolTableEntry {
 
+    /**
+     * Pozice v paměti
+     */
     private int position;
+
+    /**
+     * Úroveň
+     */
     private int level;
+
+    /**
+     * Informace, zda se jedná o konstantu
+     */
     private boolean isConst;
+
+    /**
+     * Identifikátor
+     */
     private String name;
+
+    /**
+     * Datový typ
+     */
     private String type;
+
+    /**
+     * Typ záznamu - proměnná, funkce,...
+     */
     private String elementType;
+
+    /**
+     * Seznam parametrů
+     */
     private List<SymbolTableEntry> parameters;
 
+    /**
+     * Vytvoří tabulku symbolů
+     * @param postion pozice v paměti
+     * @param level úroveň
+     * @param name identifikátor
+     * @param type datový typ
+     * @param isConst informace, zda je konstanta
+     * @param elementType typ záznamu
+     * @param parameters seznam parametrů
+     */
     public SymbolTableEntry(int postion, int level, String name, String type, boolean isConst, String elementType,
                             List<SymbolTableEntry> parameters) {
         this.position = postion;
@@ -24,66 +64,59 @@ public class SymbolTableEntry {
         this.parameters = parameters;
     }
 
+    /**
+     * Získá jméno
+     * @return jméno
+     */
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    /**
+     * Získá datový typ
+     * @return datový typ
+     */
     public String getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
+    /**
+     * Získá parametry
+     * @return parametry
+     */
     public List<SymbolTableEntry> getParameters() {
         return parameters;
     }
 
-    public void setParameters(List<SymbolTableEntry> parameters) {
-        this.parameters = parameters;
-    }
-
+    /**
+     * Získá typ záznamu
+     * @return typ záznamu
+     */
     public String getElementType() {
         return elementType;
     }
 
-    public void setElementType(String elementType) {
-        this.elementType = elementType;
-    }
-
+    /**
+     * Získá zda je konstanta
+     * @return zda je konstanta
+     */
     public boolean isConst() {
         return isConst;
     }
 
-    public void setConst(boolean aConst) {
-        isConst = aConst;
-    }
-
+    /**
+     * Získá pozici v paměti
+     * @return pozice v paměti
+     */
     public int getPosition() {
         return position;
     }
 
-    public void setPosition(int position) {
-        this.position = position;
-    }
-
+    /**
+     * Získá úroveň
+     * @return úroveň
+     */
     public int getLevel() {
         return level;
-    }
-
-    public void setLevel(int level) {
-        this.level = level;
-    }
-
-    public List<String> getParameterTypes() {
-        List<String> parameterTypes = new ArrayList<>();
-        parameters.forEach(entry -> parameterTypes.add(entry.type));
-
-        return parameterTypes;
     }
 }

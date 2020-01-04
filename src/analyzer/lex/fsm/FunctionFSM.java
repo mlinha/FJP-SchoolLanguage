@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - funkce
+ */
 public class FunctionFSM extends FiniteStateMachine {
 
     @Override

@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - !
+ */
 public class NotFSM extends FiniteStateMachine {
 
     @Override

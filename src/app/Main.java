@@ -14,8 +14,15 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * Hlavní třída programu
+ */
 public class Main {
 
+    /**
+     * Spouštěcí metoda programu
+     * @param args argumenty
+     */
     public static void main(String[] args) {
         boolean isError;
         if(args.length == 0) {
@@ -37,7 +44,14 @@ public class Main {
         System.out.println("---------Running syntax and semantic analyzer and code generator---------");
         isError = analyzer.analyze();
 
-        String name = args[0].substring(0, args[0].indexOf("."));
+        String name;
+        int index = args[0].indexOf(".");
+        if(index <= 0) {
+            name = args[0];
+        }
+        else {
+            name = args[0].substring(0, args[0].indexOf("."));
+        }
 
         if(!isError) {
             System.out.println("No syntax and semantic errors detected.\nOutput file \"" + name + ".sl\" generated!");
@@ -62,6 +76,11 @@ public class Main {
         }
     }
 
+    /**
+     * Seřadí a přepíše soubor
+     * @param name jméno souboru
+     * @throws IOException chyba
+     */
     private static void sort(String name) throws IOException {
         Map<Integer, String> data = new TreeMap<>();
         BufferedReader reader = new BufferedReader(new FileReader("tmp.txt"));

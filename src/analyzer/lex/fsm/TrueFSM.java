@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - pravda
+ */
 public class TrueFSM extends FiniteStateMachine {
 
     @Override

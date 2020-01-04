@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - numerické operátory
+ */
 public class OpFSM extends FiniteStateMachine {
 
     @Override

@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - zatimco
+ */
 public class WhileFSM extends FiniteStateMachine {
 
     @Override

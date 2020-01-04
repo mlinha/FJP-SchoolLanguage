@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - závorky
+ */
 public class ParenFSM extends FiniteStateMachine {
 
     @Override

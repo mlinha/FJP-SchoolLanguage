@@ -1,0 +1,27 @@
+cislo a = 0;
+
+funkce cislo pocitej() {
+    cislo i = 0;
+    zatimco(i < 10) {
+        pokud(i == 0) {
+            zatimco(i < 5) {
+                i = i + 1;
+                pokud(i == 1) {
+                    zastav;
+                }
+            }
+        }
+        pokud(i == 2) {
+            zastav;
+        }
+        i = i + 1;
+    }
+
+    vrat i;
+}
+
+procedura start() {
+    a = pocitej();
+}
+
+start();

@@ -1,5 +1,8 @@
 package analyzer.lex.fsm;
 
+/**
+ * Automat pro klíčové slovo - podmínkové operátory
+ */
 public class CondOpLMFSM extends FiniteStateMachine {
 
     @Override

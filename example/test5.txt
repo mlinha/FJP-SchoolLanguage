@@ -1,0 +1,32 @@
+cislo a = 0;
+
+funkce cislo pocitej(cislo x, cislo y) {
+    cislo o = 0;
+    cislo retVal = 0;
+    logicky l = nepravda;
+    zatimco(o <= 12 && !(l == pravda)) {
+        o = o + 1;
+        pokud(o == 6 || o == 11) {
+            zatimco(o < 20) {
+                o = o + 2;
+                pokud(o == 10 || o == 15) {
+                    zastav;
+                }
+            }
+        }
+        pokud(o == 10) {
+            retVal = x * y;
+        }
+    }
+
+    retVal = (retVal / x) * y - o;
+
+    vrat retVal;
+}
+
+procedura start() {
+    cislo x = 5;
+    a = pocitej(x, 5);
+}
+
+start();
