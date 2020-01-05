@@ -6,13 +6,7 @@ import analyzer.lex.LexicalAnalyzer;
 import analyzer.synsemgen.SyntaxSemanticAnalyzerGenerator;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Hlavní třída programu
@@ -57,20 +51,11 @@ public class Main {
             System.out.println("No syntax and semantic errors detected.\nOutput file \"" + name + ".sl\" generated!");
         }
         else {
-            File f = new File("tmp.txt");
-            if(!f.delete()) {
-                System.out.println("Error while deleting temporary file!");
-            }
-
             return;
         }
 
         try {
-            sort(name);
-            File f = new File("tmp.txt");
-            if(!f.delete()) {
-                System.out.println("Error while deleting temporary file!");
-            }
+            writeOutput(name, ((SyntaxSemanticAnalyzerGenerator) analyzer).getData());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -81,15 +66,7 @@ public class Main {
      * @param name jméno souboru
      * @throws IOException chyba
      */
-    private static void sort(String name) throws IOException {
-        Map<Integer, String> data = new TreeMap<>();
-        BufferedReader reader = new BufferedReader(new FileReader("tmp.txt"));
-        String line;
-        while((line = reader.readLine()) != null) {
-            data.put(Integer.parseInt(line.substring(0, line.indexOf(" "))), line);
-        }
-        reader.close();
-
+    private static void writeOutput(String name, Map<Integer, String> data) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(name + ".sl"));
 
         for (String out : data.values()){

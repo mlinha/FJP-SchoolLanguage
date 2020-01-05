@@ -14,7 +14,7 @@ public class SymbolTableEntry {
     private int position;
 
     /**
-     * Úroveň
+     * Úroven
      */
     private int level;
 
@@ -46,7 +46,7 @@ public class SymbolTableEntry {
     /**
      * Vytvoří tabulku symbolů
      * @param postion pozice v paměti
-     * @param level úroveň
+     * @param level úroven
      * @param name identifikátor
      * @param type datový typ
      * @param isConst informace, zda je konstanta
@@ -113,8 +113,8 @@ public class SymbolTableEntry {
     }
 
     /**
-     * Získá úroveň
-     * @return úroveň
+     * Získá úroven
+     * @return úroven
      */
     public int getLevel() {
         return level;
