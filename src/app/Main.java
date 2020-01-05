@@ -62,8 +62,9 @@ public class Main {
     }
 
     /**
-     * Seřadí a přepíše soubor
+     * Vypíše soubor
      * @param name jméno souboru
+     * @param data mapa s příkazy
      * @throws IOException chyba
      */
     private static void writeOutput(String name, Map<Integer, String> data) throws IOException {
