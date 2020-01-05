@@ -1110,6 +1110,9 @@ public class RecursiveDescentParser {
     }
 
     private void start() {
+        if (symbol.equals("end")) {
+            return;
+        }
         String name = token.getValue();
         verify(symbol, "IDENTIFIKATOR");
         SymbolTableEntry entry = findFunction(name);
