@@ -18,7 +18,7 @@
   
   <property name="bin.jar.file" value="sl.jar" />
 
-  <property name="main-class" value="Main" />
+  <property name="main-class" value="app.Main" />
   <path id="classpath">
     <pathelement location="${build.dir}" />    
   </path>
